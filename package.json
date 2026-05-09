@@ -1,0 +1,34 @@
+{
+  "name": "solana-bots",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "drizzle-kit generate && drizzle-kit push",
+    "lint": "eslint .",
+    "types": "npx tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@riavzon/utils": "^1.1.6",
+    "@solana/web3.js": "^1.98.4",
+    "better-sqlite3": "^12.9.0",
+    "bs58": "^6.0.0",
+    "citty": "^0.2.2",
+    "consola": "^3.4.2",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/bs58": "^4.0.4",
+    "@types/node": "^25.6.2",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^10.3.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.2"
+  }
+}
