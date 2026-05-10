@@ -13,7 +13,7 @@ import consola from 'consola';
 import { decryptPrivateKey, getApiAndRpc } from '../utils/utils.js';
 
 
-export async function distributeGas(password: string, amountPerWallet: number, fee = 5000) {
+export async function distributeGas(password: string, amountPerWallet: number, fee = 3000) {
     const { rpc } = await getApiAndRpc(password);
     const connection = new Connection(rpc, "confirmed");
 
