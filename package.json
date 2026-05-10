@@ -50,7 +50,7 @@
   },
   "scripts": {
     "migrate": "drizzle-kit generate && drizzle-kit push",
-    "build": "tsdown",
+    "build": "tsdown && npx drizzle-kit generate && cp -r src/db/migrations dist/migrations",
     "lint": "eslint .",
     "types": "npx tsc --noEmit"
   },

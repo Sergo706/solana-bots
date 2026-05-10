@@ -55,7 +55,7 @@ export async function distributeGas(password: string, amountPerWallet: number, f
     if (currentBalance < totalRequired) {
         const missing = Number(totalRequired - currentBalance) / LAMPORTS_PER_SOL;
         consola.error(`Insufficient funds. You need ${missing.toFixed(4)} more SOL in your main wallet.`);
-        return; 
+        process.exit(1);
     }
 
         const { blockhash } = await connection.getLatestBlockhash();

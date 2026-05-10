@@ -2,6 +2,13 @@ import consola from 'consola';
 import crypto from 'crypto';
 import { db } from '../db/connection.js';
 import { apiAndRpcTable } from '../db/index.js';
+import {
+  Connection,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  clusterApiUrl
+} from "@solana/web3.js";
+import { getAllWallets } from './getWallets.js';
 
 const SCRYPT_CONFIG = {
   keyLen: 32,
@@ -115,3 +122,24 @@ export const getApiAndRpc = async (password: string) => {
       rawKey
    };
 };
+
+
+
+export const getAirDrop = async (password: string) => {
+  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+  const keys = await getAllWallets(password);
+
+  const receiver = new PublicKey(keys.mainKey.pubkey);
+  const airdropAmt = 5 * LAMPORTS_PER_SOL;
+  try {
+    const sig = await connection.requestAirdrop(receiver, airdropAmt);
+    consola.success('Airdrop succeeded!', sig);
+    return;
+  } catch (err) {
+       consola.fail('Airdrop failed!', err);
+  }
+
+};
+
+
+

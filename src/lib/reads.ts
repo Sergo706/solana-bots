@@ -11,8 +11,14 @@ import { decryptPrivateKey, getApiAndRpc } from "../utils/utils.js";
 export async function getAllWalletsView(password: string) {
     const { rpc } = await getApiAndRpc(password);
     
-    const connection = new Connection(rpc, "confirmed");
     const keys = await getAllWallets(password);
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!keys.mainKey && keys.subKeys.length === 0) {
+        consola.warn("No wallets found in the database for this password.");
+        return;
+    }
+
+    const connection = new Connection(rpc, "confirmed");
     const mainBalance = await connection.getBalance(keys.mainKey.pubkey);
     
     const mainKeyData = {
@@ -22,6 +28,7 @@ export async function getAllWalletsView(password: string) {
         balanceOfSOL: mainBalance / LAMPORTS_PER_SOL
     };
 
+    console.log(`Found ${String(keys.subKeys.length)} sub-wallets in DB.`);
     const subKeysData = await Promise.all((keys.subKeys).map(async (s) => {
         const bal = await connection.getBalance(s.pubkey);
         return {

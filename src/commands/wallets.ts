@@ -5,7 +5,7 @@ import { range } from "@riavzon/utils";
 import { drainWalletsToMain } from "../lib/drainWallets.js";
 import { distributeGas } from "../lib/split.js";
 import { getAllWalletsView, getByPubkey } from "../lib/reads.js";
-import { rpcAndAPI, toNumb } from "../utils/utils.js";
+import { rpcAndAPI, toNumb, getAirDrop } from "../utils/utils.js";
 
 export const storeMainWallet = defineCommand({
     meta: {
@@ -131,5 +131,20 @@ export const readWalletView= defineCommand({
 
     async run({args}) {
         await getByPubkey(args.password, args.pubkey);
+    }
+});
+
+export const getAirDropC = defineCommand({
+    meta: {
+        name: 'Get Airdrop',
+        description: `Get Airdrop SOLS from devnet`
+    },
+    
+    args: {
+        password: {type: 'string', description: 'The password that you used to create sub wallets and store the main wallet', required: true, valueHint: "mySecurePassword" }
+    },
+
+    async run({args}) {
+        await getAirDrop(args.password);
     }
 });

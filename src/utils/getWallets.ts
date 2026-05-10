@@ -11,11 +11,14 @@ export async function getAllWallets(password: string) {
   const [main] = await db.select().from(walletTable).where(eq(walletTable.isMainWallet, true));
   const subKeys = await db.select().from(walletTable).where(eq(walletTable.isMainWallet, false));
   
-    if (subKeys.length === 0 && main?.privateKeyEncrypted || main?.publicAddress) {
-        consola.error('There is not configured wallets in the database yet.');
+    if (!main?.privateKeyEncrypted) {
+        consola.error('Main wallet is missing from the database.');
         process.exit(1);
-    } 
-    
+    }
+        
+    if (subKeys.length === 0) {
+        consola.warn('Main wallet found, but no sub-wallets have been created.');
+    }
 
     const subWalletDecryptedKeyPair = subKeys.map((sub) => {
             const decryptedWallet = decryptPrivateKey(sub.privateKeyEncrypted as Buffer, password);
@@ -23,7 +26,7 @@ export async function getAllWallets(password: string) {
             return subWallet;
     });
 
-    const decryptedWallet = decryptPrivateKey(main?.privateKeyEncrypted as Buffer, password);
+    const decryptedWallet = decryptPrivateKey(main.privateKeyEncrypted as Buffer, password);
     const mainWallet = Keypair.fromSecretKey(decryptedWallet);
 
     return {
@@ -31,8 +34,8 @@ export async function getAllWallets(password: string) {
             decryptedPrivate: mainWallet.secretKey,
             pubkey: mainWallet.publicKey,
             meta: {
-                id: main?.id,
-                createAt: main?.createdAt
+                id: main.id,
+                createAt: main.createdAt
             }
         },
         subKeys: subWalletDecryptedKeyPair.map((w, i) => ({

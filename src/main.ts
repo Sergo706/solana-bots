@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { defineCommand, runMain } from 'citty';
 import { consola } from 'consola';
-import { storeMainWallet, createWallets, drainWallets, splitFounds, readAllWallets, readWalletView, apiAndRpc } from './commands/wallets.js';
+import { storeMainWallet, createWallets, drainWallets, splitFounds, readAllWallets, readWalletView, apiAndRpc, getAirDropC } from './commands/wallets.js';
 import { createWallet, storeMain } from './lib/createWallet.js';
 import { range } from '@riavzon/utils';
 import { toNumb, rpcAndAPI } from './utils/utils.js';
@@ -21,14 +21,19 @@ const start = defineCommand({
     split: splitFounds,
     'read-all': readAllWallets,
     read: readWalletView,
+    airdrop: getAirDropC,
     buy,
     sell,
     out: massOut
   },
 
-  async run() {
-     consola.box('Solana Bots - Starter');
+  async run({args}) {
+   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+   if (args._ && args._.length > 0) {
+        return; 
+    }
 
+     consola.box('Solana Bots - Starter');
      const password = await consola.prompt('First add your main wallet. This wallet will be used to distribute funds across, sub wallets, and drain them.', {
         type: 'text',
         placeholder: 'The password used to encrypt and decrypt your wallets',
@@ -132,5 +137,6 @@ const start = defineCommand({
      process.exit(0);
   }
 });
+
 
 await runMain(start);
