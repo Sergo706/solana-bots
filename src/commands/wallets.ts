@@ -5,7 +5,7 @@ import { range } from "@riavzon/utils";
 import { drainWalletsToMain } from "../lib/drainWallets.js";
 import { distributeGas } from "../lib/split.js";
 import { getAllWalletsView, getByPubkey } from "../lib/reads.js";
-import { toNumb } from "../utils/utils.js";
+import { rpcAndAPI, toNumb } from "../utils/utils.js";
 
 export const storeMainWallet = defineCommand({
     meta: {
@@ -21,6 +21,24 @@ export const storeMainWallet = defineCommand({
     async run({args}) {
        consola.start('Storing main wallet...');
        await storeMain(args.password, args.pathToPrivateKey);
+    }
+});
+
+export const apiAndRpc = defineCommand({
+    meta: {
+        name: 'Jupiter api & RPC config',
+        description: `Configure the Jupiter api key, and the rpc to use.`
+    },
+
+    args: {
+        password: {type: 'string', description: 'The password that will be used for encryption and decryption (should be the same as for the main wallet)', required: true, valueHint: "mySecurePassword" },
+        rpc: {type: 'string', description: 'The rpc url', required: false, default: 'https://api.mainnet.solana.com'},
+        api: {type: 'string', description: 'The API key to use', required: true },
+    },
+
+    async run({args}) {
+       consola.start('Storing main api and rpc...');
+       await rpcAndAPI(args.api, args.rpc, args.password);
     }
 });
 

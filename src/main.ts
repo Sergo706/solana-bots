@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { defineCommand, runMain } from 'citty';
 import { consola } from 'consola';
-import { storeMainWallet, createWallets, drainWallets, splitFounds, readAllWallets, readWalletView } from './commands/wallets.js';
+import { storeMainWallet, createWallets, drainWallets, splitFounds, readAllWallets, readWalletView, apiAndRpc } from './commands/wallets.js';
 import { createWallet, storeMain } from './lib/createWallet.js';
 import { range } from '@riavzon/utils';
-import { toNumb } from './utils/utils.js';
+import { toNumb, rpcAndAPI } from './utils/utils.js';
 import { distributeGas } from './lib/split.js';
 import { buy, massOut, sell } from './commands/operation.js';
 
@@ -16,6 +16,7 @@ const start = defineCommand({
   subCommands: {
     main: storeMainWallet,
     create: createWallets,
+    'api-rpc': apiAndRpc,
     drain: drainWallets,
     split: splitFounds,
     'read-all': readAllWallets,
@@ -51,6 +52,30 @@ const start = defineCommand({
 
      await storeMain(password, path);
 
+     const api = await consola.prompt(`Provide your Jupiter api key (will be encrypted):`, {
+          type: 'text',
+          cancel: 'null'
+     });
+
+     if (api === null) {
+          consola.fail('Existing...');
+          process.exit(1); 
+     }
+
+      const rpc = await consola.prompt(`Provide the rpc you want to use. default to https://api.mainnet.solana.com:`, {
+          type: 'text',
+          placeholder: 'https://api.mainnet.solana.com',
+          default: 'https://api.mainnet.solana.com',
+          cancel: 'null'
+     });
+
+     if (rpc === null) {
+          consola.fail('Existing...');
+          process.exit(1); 
+     }
+
+     await rpcAndAPI(api, rpc, password);
+     
      const createBots = await consola.prompt('Now lets created some sub wallets. Enter the number of sub wallets you want to create', {
         type: 'text',
         placeholder: '5',

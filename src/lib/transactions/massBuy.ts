@@ -1,7 +1,6 @@
 import { 
   Connection, 
   Keypair, 
-  clusterApiUrl,
   VersionedTransaction,
   LAMPORTS_PER_SOL
 } from '@solana/web3.js';
@@ -9,18 +8,20 @@ import { db } from '../../db/connection.js';
 import { walletTable } from '../../db/index.js';
 import { eq } from 'drizzle-orm';
 import consola from 'consola';
-import { decryptPrivateKey, sleep } from '../../utils/utils.js';
+import { decryptPrivateKey, getApiAndRpc, sleep } from '../../utils/utils.js';
 import type { ExecuteResponse, OrderResponse } from '../../types/Jupiter.js';
 
 const NETWORK_FEE_BUFFER = BigInt(0.005 * LAMPORTS_PER_SOL);
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 
 export async function massBuy(targetMintAddress: string, solAmountsPerWallet: number, numberOfWallets: number, password: string) {
- const API_KEY = process.env['JUPITER'];
+ const { rpc, rawKey } = await getApiAndRpc(password);
+
+ const API_KEY = rawKey;
  if (!API_KEY) throw new Error("Missing JUPITER_API_KEY");
  const JUPITER_BASE_URL = "https://api.jup.ag/swap/v2";
 
- const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+ const connection = new Connection(rpc, 'confirmed');
  const lamportsPerWallet = BigInt(Math.floor(solAmountsPerWallet * LAMPORTS_PER_SOL));
 
  const allSubWallets = await db.select().from(walletTable).where(eq(walletTable.isMainWallet, false));

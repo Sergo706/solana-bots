@@ -1,5 +1,7 @@
 import consola from 'consola';
 import crypto from 'crypto';
+import { db } from '../db/connection.js';
+import { apiAndRpcTable } from '../db/index.js';
 
 const SCRYPT_CONFIG = {
   keyLen: 32,
@@ -69,4 +71,47 @@ const numb = parseInt(String(val), 10);
      process.exit(1);
   }
   return numb;
+};
+
+
+export const rpcAndAPI = async (apiKey: string, rpc = 'https://api.mainnet.solana.com', password: string) => {
+    const [data] = await db.select().from(apiAndRpcTable);
+    const buf = Uint8Array.from(apiKey);
+    const encBuf = encryptPrivateKey(buf, password);
+
+   if (data) {
+      consola.info('Updating rpc and api key');
+      await db.update(apiAndRpcTable).set({
+        encryptedApiKey: encBuf,
+        rpc
+    });
+    } else {
+          consola.info('Saving new rpc and api key');
+          await db.insert(apiAndRpcTable).values({
+            encryptedApiKey: encBuf,
+            rpc
+          });
+
+    }
+
+    consola.success('Saved encrypted api key, and rpc');
+    return;
+};
+
+
+export const getApiAndRpc = async (password: string) => {
+   const [data] = await db.select().from(apiAndRpcTable);
+
+   if (!data) {
+      consola.error('No api key or rpc found');
+      process.exit(1);
+   }
+
+   const dec = decryptPrivateKey(data.encryptedApiKey as Buffer, password);
+
+   const rawKey = Buffer.from(dec).toString('utf-8');
+   return {
+      rpc: data.rpc,
+      rawKey
+   };
 };

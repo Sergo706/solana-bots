@@ -3,19 +3,20 @@ import {
   Keypair, 
   SystemProgram, 
   Transaction, 
-  PublicKey,
-  clusterApiUrl,
+  PublicKey
 } from '@solana/web3.js';
 import { db } from '../db/connection.js';
 import { walletTable } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import consola from 'consola';
-import { decryptPrivateKey } from '../utils/utils.js';
+import { decryptPrivateKey, getApiAndRpc } from '../utils/utils.js';
 
 
 
 export async function drainWalletsToMain(password: string, fee = 5000) {
-    const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+    const { rpc } = await getApiAndRpc(password);
+    
+    const connection = new Connection(rpc, 'confirmed');
 
     const [mainWalletData] = await db.select().from(walletTable).where(eq(walletTable.isMainWallet, true));
     

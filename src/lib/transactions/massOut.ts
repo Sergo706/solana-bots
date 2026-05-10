@@ -1,7 +1,6 @@
 import { 
   Connection, 
   Keypair, 
-  clusterApiUrl,
   VersionedTransaction,
   LAMPORTS_PER_SOL,
   PublicKey
@@ -10,7 +9,7 @@ import { db } from '../../db/connection.js';
 import { walletTable } from '../../db/index.js';
 import { eq } from 'drizzle-orm';
 import consola from 'consola';
-import { decryptPrivateKey, sleep } from '../../utils/utils.js';
+import { decryptPrivateKey, getApiAndRpc, sleep } from '../../utils/utils.js';
 import type { ExecuteResponse, OrderResponse } from '../../types/Jupiter.js';
 
 const GAS_FEE_BUFFER = BigInt(0.005 * LAMPORTS_PER_SOL);
@@ -19,9 +18,10 @@ const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ
 const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 
 export async function massOutForAllWallets(password: string) {
- const API_KEY = process.env['JUPITER'];
+ const { rpc, rawKey } = await getApiAndRpc(password);
+ const API_KEY = rawKey;
  const JUPITER_BASE_URL = "https://api.jup.ag/swap/v2";
- const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+ const connection = new Connection(rpc, 'confirmed');
 
  if (!API_KEY) throw new Error("Missing JUPITER_API_KEY");
 

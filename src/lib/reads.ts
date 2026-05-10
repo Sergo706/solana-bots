@@ -1,15 +1,17 @@
 import { getAllWallets } from "../utils/getWallets.js";
 import consola from "consola";
-import { clusterApiUrl, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { db } from "../db/connection.js";
 import { walletTable } from "../db/index.js";
 import { eq } from "drizzle-orm";
-import { decryptPrivateKey } from "../utils/utils.js";
+import { decryptPrivateKey, getApiAndRpc } from "../utils/utils.js";
 
-const connection = new Connection(clusterApiUrl('devnet'), "confirmed");
 
 
 export async function getAllWalletsView(password: string) {
+    const { rpc } = await getApiAndRpc(password);
+    
+    const connection = new Connection(rpc, "confirmed");
     const keys = await getAllWallets(password);
     const mainBalance = await connection.getBalance(keys.mainKey.pubkey);
     
@@ -37,6 +39,9 @@ export async function getAllWalletsView(password: string) {
 
 export async function getByPubkey(password: string, pubkey: string | PublicKey) { 
     try {
+        const { rpc } = await getApiAndRpc(password);
+        const connection = new Connection(rpc, "confirmed");
+
         const keyStr = typeof pubkey === 'string' ? pubkey : pubkey.toBase58();
         const [target] = await db.select().from(walletTable).where(eq(walletTable.publicAddress, keyStr));
 
