@@ -1,8 +1,7 @@
 {
   "name": "solana-bots",
   "version": "1.0.0",
-  "main": "./dist/main.mjs",
-  "types": "./dist/main.d.mts",
+  "main": "./dist/cli.mjs",
   "type": "module",
   "author": "Sergio contact@riavzon.com",
   "license": "MIT",
@@ -35,7 +34,18 @@
     "bots"
   ],
   "bin": {
-    "solana-bots": "./dist/main.mjs"
+    "solana-bots": "./dist/cli.mjs"
+  },
+  "pkg": {
+    "assets": [
+      "dist/migrations/**/*"
+    ],
+    "targets": [
+      "linux",
+      "macos",
+      "node20-win-x64"
+    ],
+    "outputPath": "build"
   },
   "files": [
     "dist"
@@ -43,14 +53,14 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/main.d.mts",
-        "default": "./dist/main.mjs"
+        "default": "./dist/cli.mjs"
       }
     }
   },
   "scripts": {
     "migrate": "drizzle-kit generate && drizzle-kit push",
-    "build": "tsdown && npx drizzle-kit generate && cp -r src/db/migrations dist/migrations",
+    "build": "tsdown && npx drizzle-kit generate && cp -r src/db/migrations dist/migrations && pkg . --fallback-to-source",
+    "make-installer": "docker run --rm -v \"$PWD\":/work -w /work amake/innosetup installer.iss",
     "lint": "eslint .",
     "types": "npx tsc --noEmit"
   },
