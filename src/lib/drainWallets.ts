@@ -10,7 +10,7 @@ import { db } from '../db/connection.js';
 import { walletTable } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import consola from 'consola';
-import { decryptPrivateKey } from '../utils/encrypt.js';
+import { decryptPrivateKey } from '../utils/utils.js';
 
 
 
@@ -92,4 +92,3 @@ export async function drainWalletsToMain(password: string, fee = 5000) {
         process.exit(1);
     }
 }
-drainWalletsToMain('1234')

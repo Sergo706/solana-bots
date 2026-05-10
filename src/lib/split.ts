@@ -11,7 +11,7 @@ import { db } from '../db/connection.js';
 import { walletTable } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import consola from 'consola';
-import { decryptPrivateKey } from '../utils/encrypt.js';
+import { decryptPrivateKey } from '../utils/utils.js';
 
 
 export async function distributeGas(password: string, amountPerWallet: number) {
