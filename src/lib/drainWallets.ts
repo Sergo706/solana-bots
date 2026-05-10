@@ -87,6 +87,7 @@ export async function drainWalletsToMain(password: string, fee = 5000) {
         consola.success(`Successfully drained ${String(signatures.length)} wallets.`);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         consola.info(`Sig: ${signatures[0]!}`);
+        return;
     } catch (err) {
         consola.error('Error during batch drain:', err);
         process.exit(1);

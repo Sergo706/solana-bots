@@ -31,7 +31,7 @@ export async function getAllWalletsView(password: string) {
     }));
 
     consola.box({ main: mainKeyData, subs: subKeysData });
-    process.exit(0);
+    return;
 }
 
 
@@ -56,7 +56,7 @@ export async function getByPubkey(password: string, pubkey: string | PublicKey) 
             balanceOfSOL: mainBalance / LAMPORTS_PER_SOL
         };
         consola.box({ main: data });
-        process.exit(0);
+        return;
 
     } catch (err) {
         consola.box('Error getting data', err);

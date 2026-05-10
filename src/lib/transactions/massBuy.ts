@@ -117,5 +117,5 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
     }
   }
   consola.success("Mass Buy operation completed.");
-  process.exit(0);
+  return;
 }

@@ -14,7 +14,7 @@ import consola from 'consola';
 import { decryptPrivateKey } from '../utils/utils.js';
 
 
-export async function distributeGas(password: string, amountPerWallet: number) {
+export async function distributeGas(password: string, amountPerWallet: number, fee = 5000) {
     const connection = new Connection(clusterApiUrl('devnet'), "confirmed");
 
     try {
@@ -31,7 +31,6 @@ export async function distributeGas(password: string, amountPerWallet: number) {
 
     const decryptedWallet = decryptPrivateKey(wallet.privateKeyEncrypted as Buffer, password);
     const mainWallet = Keypair.fromSecretKey(decryptedWallet);
-    const { blockhash } = await connection.getLatestBlockhash();
 
     const subWalletAddresses = await db.select({privateKeyEncrypted: walletTable.privateKeyEncrypted, publicAddress: walletTable.publicAddress})
                     .from(walletTable)
@@ -41,7 +40,25 @@ export async function distributeGas(password: string, amountPerWallet: number) {
         consola.error('There is not configured wallets in the database yet. Create a few first.');
         process.exit(1);
     }
+
+    const amountInLamports = BigInt(Math.floor(amountPerWallet * LAMPORTS_PER_SOL));
+    const estimatedFeePerTx = fee;
+
+    const totalTransferAmount = amountInLamports * BigInt(subWalletAddresses.length);
+    const totalFees = BigInt(estimatedFeePerTx) * BigInt(subWalletAddresses.length);
+    const totalRequired = totalTransferAmount + totalFees;
+    const currentBalance = BigInt(await connection.getBalance(mainWallet.publicKey));
     
+    consola.info(`Total Required: ${String(Number(totalRequired) / LAMPORTS_PER_SOL)} SOL`);
+    consola.info(`Current Balance: ${String(Number(currentBalance) / LAMPORTS_PER_SOL)} SOL`);
+
+    if (currentBalance < totalRequired) {
+        const missing = Number(totalRequired - currentBalance) / LAMPORTS_PER_SOL;
+        consola.error(`Insufficient funds. You need ${missing.toFixed(4)} more SOL in your main wallet.`);
+        return; 
+    }
+
+        const { blockhash } = await connection.getLatestBlockhash();
         const distributionPromises = subWalletAddresses.map(async (sub) => {
             const transaction = new Transaction().add(
                 SystemProgram.transfer({
@@ -63,6 +80,7 @@ export async function distributeGas(password: string, amountPerWallet: number) {
     consola.info(`Last Sig: ${signatures[signatures.length - 1] ?? 'No signature'}`);
 
     consola.success(`Successfully distributed founds across wallets`);
+    return;
     } catch (err) {
         consola.error(`Error distributing founds`, err);
         process.exit(1);

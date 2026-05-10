@@ -60,3 +60,13 @@ try {
 
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const toNumb = (val: unknown) =>  {
+const numb = parseInt(String(val), 10);
+  if (isNaN(numb)) {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    consola.error(`${val} is not a valid number`);
+     process.exit(1);
+  }
+  return numb;
+};

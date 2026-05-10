@@ -6,6 +6,7 @@ import consola from "consola";
 import fs from 'node:fs';
 import path from "node:path";
 import bs58 from 'bs58';
+import { eq } from "drizzle-orm";
 
 export async function createWallet(password: string) {
     const newWallet = Keypair.generate();
@@ -22,6 +23,13 @@ export async function createWallet(password: string) {
 }
 
 export async function storeMain(password: string, secretPath: string) {
+    const [main] = await db.select().from(walletTable).where(eq(walletTable.isMainWallet, true));
+
+    if (main?.privateKeyEncrypted || main?.publicAddress) {
+        consola.error(`MAIN wallet already exists!`);
+        process.exit(1);
+    }
+    
     const filePath = path.resolve(process.cwd(), secretPath);
     const secretKeyString = fs.readFileSync(filePath, "utf8");
 
@@ -40,14 +48,12 @@ export async function storeMain(password: string, secretPath: string) {
                 secretKeyBytes = Uint8Array.from(parsed);
 
             } else if (typeof parsed === 'string') {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                 secretKeyBytes = bs58.decode(parsed);
             } else {
                 throw new Error('Unsupported JSON secret format');
             }
 
         } catch {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             secretKeyBytes = bs58.decode(trimmed);
         }
 
@@ -61,6 +67,7 @@ export async function storeMain(password: string, secretPath: string) {
         });
 
         consola.success('Main Wallet stored successfully', pub.publicKey.toBase58());
+        return;
     } catch (err) {
         consola.error("Invalid secret key format. Ensure it is a JSON array of numbers, a base58 string, base64, or hex.");
         consola.error(err);

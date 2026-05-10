@@ -135,5 +135,5 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
   }
 
   consola.success("Mass Sell operation completed.");
-  process.exit(0);
+  return;
 }

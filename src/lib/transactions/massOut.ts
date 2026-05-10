@@ -120,5 +120,5 @@ export async function massOutForAllWallets(password: string) {
         }
     }
     consola.success("Mass Out operation completed.");
-    process.exit(0);
+   return;
 }

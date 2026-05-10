@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@riavzon/utils": "^1.1.6",
     "@solana/web3.js": "^1.98.4",
