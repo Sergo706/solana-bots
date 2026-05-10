@@ -77,7 +77,8 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
         let totalSolRequired = lamportsPerWallet + NETWORK_FEE_BUFFER;
 
 
-        if (orderResult.feeMint === SOL_MINT) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (orderResult.feeMint === SOL_MINT && orderResult.platformFee?.amount) {
                 totalSolRequired += BigInt(orderResult.platformFee.amount);
         }
 

@@ -127,7 +127,7 @@ const start = defineCommand({
           process.exit(1); 
      }
 
-     await distributeGas(password, toNumb(fund));
+     await distributeGas(password, parseFloat(fund));
 
      consola.success('Your all set!');
      consola.info('Try running buy --help, sell --help, out --help to understand how to start trading!');

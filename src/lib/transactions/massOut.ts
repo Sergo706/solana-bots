@@ -46,15 +46,15 @@ export async function massOutForAllWallets(password: string) {
        try {
          consola.info(`Checking wallet: ${wallet.publicKey.toBase58()}`);
          const solBalance = BigInt(await connection.getBalance(wallet.publicKey));
+         await sleep(500);
             if (solBalance < GAS_FEE_BUFFER) {
                 consola.warn(`Skipping ${wallet.publicKey.toBase58()}: No SOL for gas.`);
                 continue;
             }
 
-        const [standardAccounts, token2022Accounts] = await Promise.all([
-                connection.getParsedTokenAccountsByOwner(wallet.publicKey, { programId: TOKEN_PROGRAM_ID }),
-                connection.getParsedTokenAccountsByOwner(wallet.publicKey, { programId: TOKEN_2022_PROGRAM_ID })
-            ]);
+        const standardAccounts = await connection.getParsedTokenAccountsByOwner(wallet.publicKey, { programId: TOKEN_PROGRAM_ID });
+        await sleep(1000);
+        const token2022Accounts = await connection.getParsedTokenAccountsByOwner(wallet.publicKey, { programId: TOKEN_2022_PROGRAM_ID });
 
 
         const allAccounts = [...standardAccounts.value, ...token2022Accounts.value];
@@ -112,17 +112,18 @@ export async function massOutForAllWallets(password: string) {
                         consola.error(`Failed to swap ${String(mint)}:`, result);
                     }
 
-                    await sleep(500);
+                    await sleep(2000);
 
                 } catch (tokenErr) {
                     consola.error(`Error processing token ${String(mint)}:`, tokenErr);
                 }
             }
 
-            await sleep(1000);
+            await sleep(2000);
 
         } catch (walletErr) {
             consola.error(`Critical error for wallet ${wallet.publicKey.toBase58()}:`, walletErr);
+            await sleep(5000);
         }
     }
     consola.success("Mass Out operation completed.");

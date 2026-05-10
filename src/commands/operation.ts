@@ -39,7 +39,7 @@ export const buy = defineCommand({
 
     async run({args}) {
         const numbWallets = toNumb(args.wallets);
-        const amountsNumb = toNumb(args.amounts);
+        const amountsNumb = parseFloat(args.amounts);
 
         if (numbWallets <= 0 || amountsNumb <= 0) {
             consola.error("The 'wallets' argument must be a valid number greater than 0.");

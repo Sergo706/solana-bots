@@ -13,9 +13,10 @@ import consola from 'consola';
 import { decryptPrivateKey, getApiAndRpc } from '../utils/utils.js';
 
 
-export async function distributeGas(password: string, amountPerWallet: number, fee = 3000) {
+export async function distributeGas(password: string, amountPerWallet: number | string, fee = 5000) {
     const { rpc } = await getApiAndRpc(password);
     const connection = new Connection(rpc, "confirmed");
+    const parsedAmount = typeof amountPerWallet === 'string' ? parseFloat(amountPerWallet) : amountPerWallet;
 
     try {
 
@@ -41,7 +42,7 @@ export async function distributeGas(password: string, amountPerWallet: number, f
         process.exit(1);
     }
 
-    const amountInLamports = BigInt(Math.floor(amountPerWallet * LAMPORTS_PER_SOL));
+    const amountInLamports = BigInt(Math.floor(parsedAmount * LAMPORTS_PER_SOL));
     const estimatedFeePerTx = fee;
 
     const totalTransferAmount = amountInLamports * BigInt(subWalletAddresses.length);
@@ -64,7 +65,7 @@ export async function distributeGas(password: string, amountPerWallet: number, f
                 SystemProgram.transfer({
                     fromPubkey: mainWallet.publicKey,
                     toPubkey: new PublicKey(String(sub.publicAddress)), 
-                    lamports: Math.floor(LAMPORTS_PER_SOL * amountPerWallet),
+                    lamports: Number(amountInLamports),
                 })
             );
 

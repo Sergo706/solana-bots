@@ -13,7 +13,7 @@ import { decryptPrivateKey, getApiAndRpc } from '../utils/utils.js';
 
 
 
-export async function drainWalletsToMain(password: string, fee = 3000) {
+export async function drainWalletsToMain(password: string, fee = 5000) {
     const { rpc } = await getApiAndRpc(password);
     
     const connection = new Connection(rpc, 'confirmed');

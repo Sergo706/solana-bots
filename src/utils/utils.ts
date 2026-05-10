@@ -83,7 +83,7 @@ const numb = parseInt(String(val), 10);
 
 export const rpcAndAPI = async (apiKey: string, rpc = 'https://api.mainnet.solana.com', password: string) => {
     const [data] = await db.select().from(apiAndRpcTable);
-    const buf = Uint8Array.from(apiKey);
+    const buf = Buffer.from(apiKey.trim(), 'utf8');
     const encBuf = encryptPrivateKey(buf, password);
 
    if (data) {
@@ -116,7 +116,7 @@ export const getApiAndRpc = async (password: string) => {
 
    const dec = decryptPrivateKey(data.encryptedApiKey as Buffer, password);
 
-   const rawKey = Buffer.from(dec).toString('utf-8');
+   const rawKey = Buffer.from(dec).toString('utf-8').trim();
    return {
       rpc: data.rpc,
       rawKey
