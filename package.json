@@ -1,18 +1,58 @@
 {
   "name": "solana-bots",
   "version": "1.0.0",
-  "description": "",
+  "main": "./dist/main.mjs",
+  "types": "./dist/main.d.mts",
   "type": "module",
-  "main": "index.js",
+  "author": "Sergio contact@riavzon.com",
+  "license": "MIT",
+  "description": "CLI and utilities for managing multiple Solana wallets, encrypting private keys, and performing mass token swaps via Jupiter (devnet/mainnet).",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sergo706/solana-bots.git"
+  },
+  "homepage": "https://github.com/Sergo706/solana-bots#readme",
+  "bugs": {
+    "url": "https://github.com/Sergo706/solana-bots/issues"
+  },
+  "keywords": [
+    "solana",
+    "solana-bots",
+    "trading",
+    "bot trading",
+    "jupiter",
+    "swap",
+    "jup",
+    "wallets",
+    "key-encryption",
+    "drizzle-orm",
+    "sqlite",
+    "cli",
+    "crypto",
+    "devnet",
+    "mainnet",
+    "mass-sell",
+    "bots"
+  ],
+  "bin": {
+    "solana-bots": "./dist/main.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/main.d.mts",
+          "default": "./dist/main.mjs"
+        }
+  }
+},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "drizzle-kit generate && drizzle-kit push",
     "lint": "eslint .",
     "types": "npx tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
     "@riavzon/utils": "^1.1.6",
     "@solana/web3.js": "^1.98.4",
