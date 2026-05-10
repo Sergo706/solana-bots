@@ -19,6 +19,12 @@ const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqC
 
 export async function massOutForAllWallets(password: string) {
  const { rpc, rawKey } = await getApiAndRpc(password);
+ 
+ if (rpc.includes('devnet')) {
+    consola.error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
+    process.exit(1);
+}
+
  const API_KEY = rawKey;
  const JUPITER_BASE_URL = "https://api.jup.ag/swap/v2";
  const connection = new Connection(rpc, 'confirmed');

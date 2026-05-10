@@ -17,6 +17,11 @@ const SOL_MINT = "So11111111111111111111111111111111111111112";
 export async function massBuy(targetMintAddress: string, solAmountsPerWallet: number, numberOfWallets: number, password: string) {
  const { rpc, rawKey } = await getApiAndRpc(password);
 
+ if (rpc.includes('devnet')) {
+    consola.error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
+    process.exit(1);
+}
+
  const API_KEY = rawKey;
  if (!API_KEY) throw new Error("Missing JUPITER_API_KEY");
  const JUPITER_BASE_URL = "https://api.jup.ag/swap/v2";
