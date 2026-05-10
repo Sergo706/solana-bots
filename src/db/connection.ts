@@ -1,16 +1,20 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from './index.js';
-import Database from 'better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import * as schema from "./index.js";
 import path from "path";
-import { fileURLToPath } from "url";
+import { Database } from "bun:sqlite";
 
 
+const baseDir = path.dirname(process.execPath);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const sqlite = new Database(
+  path.resolve(baseDir, "wallets.db")
+);
 
-const sqlite = new Database(path.resolve(process.cwd(), 'wallets.db'));
 export const db = drizzle(sqlite, { schema });
 
-migrate(db, {  migrationsFolder: path.join(__dirname, "migrations")  });
+const migrationsFolder = path.join(baseDir, "migrations");
+
+migrate(db, {
+  migrationsFolder
+});

@@ -7,6 +7,9 @@ export default defineConfig([
      sourcemap: true,
      dts: false,
      failOnWarn: true,
+     deps: {
+       neverBundle: ['bun:sqlite']
+     },
      entry: {
         cli: 'src/main.ts'
      },
