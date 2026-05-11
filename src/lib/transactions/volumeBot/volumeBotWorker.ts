@@ -11,6 +11,7 @@ import { getEligibleWallets } from "../../../utils/getWalletsWithSOL.js";
 import consola from "consola";
 import { sleep } from "../../../utils/utils.js";
 import type { Keypair } from "@solana/web3.js";
+import { massOutForAllWallets } from "../massOut.js";
 
 const dataDir =
   process.platform === "win32"
@@ -22,7 +23,7 @@ const STATS_FILE = path.join(dataDir, "volumeBot.stats.json");
 
 
 let stopping = false;
-
+let shouldMassOut = false;
 
 async function writeStats(stats: VolumeBotStats) {
   await fs.mkdir(dataDir, { recursive: true });
@@ -36,10 +37,12 @@ async function cleanup() {
 
 
 process.on('SIGTERM', () => {
+  shouldMassOut = true;
   void cleanup();
 });
 
 process.on('SIGINT', () => {
+  shouldMassOut = true;
   void cleanup();
 });
 
@@ -116,6 +119,17 @@ export async function volumeBot(
   } finally {
     stats.status = "stopped";
     await writeStats(stats);
+
+    if (shouldMassOut) {
+      try {
+        consola.info("Closing all positions before shutdown...");
+        await massOutForAllWallets(password);
+        consola.success("Mass out completed.");
+      } catch (err) {
+        consola.error("Mass out failed:", err);
+      }
+  }
+  
     await cleanup();
   }
 }

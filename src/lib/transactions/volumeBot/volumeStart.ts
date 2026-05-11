@@ -22,7 +22,7 @@ export const volumeStart = defineCommand({
     target: {
       type: "string",
       required: true,
-      description: "The SPL token mint address to target (Base58 string).",
+      description: "The SPL token mint address to target (The coin).",
       valueHint: "..."
     },
     wallets: {
@@ -49,7 +49,7 @@ export const volumeStart = defineCommand({
       type: "string",
       required: false,
       default: "60",
-      description: "Optional time-to-live for the bot to run in seconds.",
+      description: "Optional time-to-live for the bot to run in seconds. if not added the bot will stop after 60s",
       valueHint: "60"
     },
   },

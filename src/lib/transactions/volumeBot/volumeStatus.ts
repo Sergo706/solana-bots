@@ -16,7 +16,7 @@ const STATS_FILE = path.join(dataDir, "volumeBot.stats.json");
 export const volumeStatus = defineCommand({
   meta: {
     name: "volume-status",
-    description: "Show volume bot stats",
+    description: "Shows the bot volume stats and status",
   },
   async run() {
     try {
