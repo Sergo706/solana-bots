@@ -86,7 +86,7 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
                 
                 let amountToSell = pos.tokenAmount ?? 0n;
                 if (sellPercentage !== 0 && sellPercentage < 100) {
-                    amountToSell = (pos.tokenAmount ?? 0n * BigInt(sellPercentage)) / 100n;
+                    amountToSell = ((pos.tokenAmount ?? 0n) * BigInt(sellPercentage)) / 100n;
                 }
 
                 if (!amountToSell || amountToSell <= 0n) {
