@@ -97,7 +97,7 @@ export async function volumeBot(
           .map(entry => entry.wallet);
           
      try {
-        await massBuy(targetMintAddress, maxSolPerWallet, numberOfWallets, password, 2, selectedKeypairs.length > 0 ? selectedKeypairs : undefined);
+        await massBuy(targetMintAddress, maxSolPerWallet, numberOfWallets, password, 1, selectedKeypairs.length > 0 ? selectedKeypairs : undefined);
         stats.buyCount += 1;
       } catch {
         stats.errors += 1;
@@ -106,7 +106,7 @@ export async function volumeBot(
       if (stopping || Date.now() >= expiresAt) break;
 
       try {
-        await massSell(targetMintAddress, numberOfWallets, password, undefined, 2, selectedKeypairs.length > 0 ? selectedKeypairs : undefined);
+        await massSell(targetMintAddress, numberOfWallets, password, undefined, 1, selectedKeypairs.length > 0 ? selectedKeypairs : undefined);
         stats.sellCount += 1;
       } catch {
         stats.errors += 1;

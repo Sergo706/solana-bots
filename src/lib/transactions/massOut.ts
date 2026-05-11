@@ -53,7 +53,7 @@ export async function massOutForAllWallets(password: string) {
  
 
     consola.info(`Found ${String(positions.length)} token positions to unwind.`);
-    await chunkProcess(positions, 2, async (chunk) => {
+    await chunkProcess(positions, 1, async (chunk) => {
         await Promise.all(
            chunk.map(async (pos) => {
             return db.transaction(async (tx) => { 

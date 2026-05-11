@@ -16,7 +16,7 @@ const GAS_FEE_BUFFER = BigInt(0.005 * LAMPORTS_PER_SOL);
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 const JUPITER_BASE_URL = "https://api.jup.ag/swap/v2";
 
-export async function massSell(targetMintAddress: string, numberOfWallets: number, password: string, sellPercentage = 0, chunksToProcess = 2, chosenWallets?: Keypair[]) {
+export async function massSell(targetMintAddress: string, numberOfWallets: number, password: string, sellPercentage = 0, chunksToProcess = 1, chosenWallets?: Keypair[]) {
  const { rpc, rawKey } = await getApiAndRpc(password);
  
  if (rpc.includes('devnet')) {
