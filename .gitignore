@@ -103,7 +103,7 @@ Output/
 live.txt/
 # vitepress build output
 **/.vitepress/dist
-
+live.txt
 # vitepress cache directory
 **/.vitepress/cache
 

@@ -10,7 +10,7 @@ import { db } from '../db/connection.js';
 import { walletTable } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import consola from 'consola';
-import { decryptPrivateKey, getApiAndRpc } from '../utils/utils.js';
+import { decryptPrivateKey, getApiAndRpc, sleep } from '../utils/utils.js';
 
 
 export async function distributeGas(password: string, amountPerWallet: number | string, fee = 5000) {
@@ -76,7 +76,13 @@ export async function distributeGas(password: string, amountPerWallet: number | 
 
         });
             
-    const signatures = await Promise.all(distributionPromises);
+    const signatures = await Promise.all(distributionPromises.map(async (pros) => {
+            try {
+                await(pros);
+                await sleep(Math.random() * 700);
+            } catch {}
+    }));
+
     consola.success(`Sent ${String(signatures.length)} transactions!`);
     consola.info(`Last Sig: ${signatures[signatures.length - 1] ?? 'No signature'}`);
 

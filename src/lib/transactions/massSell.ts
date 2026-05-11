@@ -1,21 +1,22 @@
 import { 
-  Connection, 
   Keypair, 
   VersionedTransaction,
   LAMPORTS_PER_SOL,
-  PublicKey
 } from '@solana/web3.js';
 import { db } from '../../db/connection.js';
-import { walletTable } from '../../db/index.js';
-import { eq } from 'drizzle-orm';
+import { positionsTable, walletTable } from '../../db/index.js';
+import { eq, inArray, and, SQL } from 'drizzle-orm';
 import consola from 'consola';
 import { decryptPrivateKey, getApiAndRpc, sleep } from '../../utils/utils.js';
 import type { ExecuteResponse, OrderResponse } from '../../types/Jupiter.js';
+import { fetchWithRetry } from '../../utils/fetchWithRetry.js';
+import { chunkProcess } from '@riavzon/utils';
 
 const GAS_FEE_BUFFER = BigInt(0.005 * LAMPORTS_PER_SOL);
 const SOL_MINT = "So11111111111111111111111111111111111111112";
+const JUPITER_BASE_URL = "https://api.jup.ag/swap/v2";
 
-export async function massSell(targetMintAddress: string, numberOfWallets: number, password: string, sellPercentage = 0) {
+export async function massSell(targetMintAddress: string, numberOfWallets: number, password: string, sellPercentage = 0, chunksToProcess = 2, chosenWallets?: Keypair[]) {
  const { rpc, rawKey } = await getApiAndRpc(password);
  
  if (rpc.includes('devnet')) {
@@ -24,122 +25,157 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
 }
 
  const API_KEY = rawKey;
- const JUPITER_BASE_URL = "https://api.jup.ag/swap/v2";
- const connection = new Connection(rpc, 'confirmed');
-
  if (!API_KEY) throw new Error("Missing JUPITER_API_KEY");
+ const walletMap = new Map<string, Keypair>();
+ const filterAddresses: string[] = [];
+ const filters: SQL[] = [];
+ filters.push(eq(positionsTable.targetMintAddress, targetMintAddress));
 
-
- const allSubWallets = await db.select().from(walletTable).where(eq(walletTable.isMainWallet, false));
- const selectedWallets = allSubWallets.slice(0, numberOfWallets);
-
- if (selectedWallets.length < numberOfWallets) {
-        consola.warn(`Requested ${String(numberOfWallets)} wallets, but only found ${String(selectedWallets.length)} in DB.`);
- }
-
-  const decrypedWallets = selectedWallets.map((sub) => {
-         const decryptedWallet = decryptPrivateKey(sub.privateKeyEncrypted as Buffer, password);
-         const subWallet = Keypair.fromSecretKey(decryptedWallet);
-         return subWallet;
-     });
- 
-
-     consola.start(`Preparing to Sell ${targetMintAddress} from ${String(decrypedWallets.length)} wallets...`);
-     
-     for (const wallet of decrypedWallets) {
-       try {
-
-         const solBalance = BigInt(await connection.getBalance(wallet.publicKey));
-            if (solBalance < GAS_FEE_BUFFER) {
-                consola.warn(`Skipping ${wallet.publicKey.toBase58()}: No SOL for gas.`);
-                continue;
-            }
-
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(wallet.publicKey, {
-                mint: new PublicKey(targetMintAddress)
-        });
-
-        if (tokenAccounts.value.length === 0) {
-            consola.info(`Wallet ${wallet.publicKey.toBase58()} has no balance for this token.`);
-            continue;
-        }
-
-        const tokenAccount = tokenAccounts.value[0];
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const totalTokenAmountStr = tokenAccount?.account.data.parsed?.info?.tokenAmount?.amount;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const totalTokenAmount = BigInt(totalTokenAmountStr);
-
-        if (totalTokenAmount <= 0n) {
-            consola.info(`Wallet ${wallet.publicKey.toBase58()} balance is 0.`);
-            continue;
-        }
-        let amountToSell = totalTokenAmount;
-        if (sellPercentage !== 0) {
-            amountToSell = (totalTokenAmount * BigInt(sellPercentage)) / 100n;
-        }
-
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        consola.info(`Wallet holds ${totalTokenAmountStr} tokens. Selling ${amountToSell.toString()} tokens...`);
-        const orderUrl = new URL(`${JUPITER_BASE_URL}/order`);
-        orderUrl.searchParams.append("inputMint", targetMintAddress);
-        orderUrl.searchParams.append("outputMint", SOL_MINT);
-        orderUrl.searchParams.append("amount", String(amountToSell));
-        orderUrl.searchParams.append('taker', wallet.publicKey.toString());
-
-        const orderResponse = await fetch(orderUrl, { 
-            headers: { 
-                "x-api-key": API_KEY 
-            } 
-        });
-
-        if (!orderResponse.ok) {
-            consola.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
-            continue;
-        }
-
-        const orderResult = await orderResponse.json() as OrderResponse;
-        if (!orderResult.transaction) throw new Error("Order failed to generate transaction");
-        
-        
-        const transaction = VersionedTransaction.deserialize(
-            Buffer.from(orderResult.transaction, "base64"),
-        );
-        transaction.sign([wallet]);
-
-       consola.info(`Executing SELL for ${wallet.publicKey.toBase58()} (${String(amountToSell)} tokens)...`);
-
-
-        const executeResponse = await fetch(`${JUPITER_BASE_URL}/execute`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": API_KEY,
-                },
-                body: JSON.stringify({
-                    signedTransaction: Buffer.from(transaction.serialize()).toString("base64"),
-                    requestId: orderResult.requestId,
-                }),
-            });
-
-        if (!executeResponse.ok) {
-            consola.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
-            continue;
-
-        }
-        const result = await executeResponse.json() as ExecuteResponse;
-
-        if (result.status === "Success") {
-                consola.success(`Sell Success! https://solscan.io/tx/${result.signature}`);
-            } else {
-                consola.error("Sell failed:", result);
-         }
-         await sleep(1000);
-     } catch (err) {
-        consola.error(`Critical error selling for ${wallet.publicKey.toBase58()}:`, err);
+ if (chosenWallets && chosenWallets.length > 0) {
+    for (const kw of chosenWallets) {
+      const addr = kw.publicKey.toBase58();
+      walletMap.set(addr, kw);
+      filterAddresses.push(addr);
     }
   }
 
+ if (filterAddresses.length > 0) {
+    filters.push(inArray(positionsTable.walletAddress, filterAddresses));
+  } 
+
+
+  const positions = await db.select().from(positionsTable).where(and(...filters)).limit(numberOfWallets);
+
+  if (positions.length === 0) {
+    consola.warn(`No positions found in database for mint: ${targetMintAddress}`);
+    return;
+  }
+
+  if (!chosenWallets || chosenWallets.length === 0) {
+    const walletAddresses = positions.map(p => p.walletAddress);
+    const relevantWallets = await db.select()
+      .from(walletTable)
+      .where(inArray(walletTable.publicAddress, walletAddresses));
+
+    for (const w of relevantWallets) {
+       const decrypted = decryptPrivateKey(w.privateKeyEncrypted as Buffer, password);
+       if (w.publicAddress) {
+           walletMap.set(w.publicAddress, Keypair.fromSecretKey(decrypted));
+       }
+    }
+  }
+
+
+    consola.start(`Selling ${targetMintAddress} from ${positions.length.toString()} active positions...`);            
+     await chunkProcess(positions, chunksToProcess, async (chunk) => {
+        await Promise.all(
+            chunk.map(async (pos) => {
+             return db.transaction(async (tx) => { 
+                const pair = walletMap.get(pos.walletAddress);
+                if (!pair) {
+                    tx.rollback();
+                    return;
+                }
+
+            try {
+                if ((pos.walletRemainingBalance ?? 0n) < GAS_FEE_BUFFER) {
+                    consola.warn(`Skipping ${pos.walletAddress}: No SOL for gas.`);
+                    tx.rollback();
+                    return;
+                }
+                
+                let amountToSell = pos.tokenAmount ?? 0n;
+                if (sellPercentage !== 0 && sellPercentage < 100) {
+                    amountToSell = (pos.tokenAmount ?? 0n * BigInt(sellPercentage)) / 100n;
+                }
+
+                if (!amountToSell || amountToSell <= 0n) {
+                    consola.info(`Skipping ${pos.walletAddress}: sell amount is 0.`);
+                    tx.rollback();
+                    return;
+                }
+
+                consola.info(
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    `Wallet ${pos.walletAddress} holds ${pos.tokenAmount!.toString()} tokens. Selling ${amountToSell.toString()}...`,
+                );
+
+                const orderUrl = new URL(`${JUPITER_BASE_URL}/order`);
+                orderUrl.searchParams.append("inputMint", targetMintAddress);
+                orderUrl.searchParams.append("outputMint", SOL_MINT);
+                orderUrl.searchParams.append("amount", String(amountToSell));
+                orderUrl.searchParams.append('taker', pos.walletAddress);
+
+                const orderResponse = await fetchWithRetry(String(orderUrl), 5, 500, { 
+                    headers: { 
+                        "x-api-key": API_KEY 
+                    } 
+                });
+
+            if (!orderResponse.ok) {
+                consola.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
+                tx.rollback();
+                return;
+            }
+
+            const orderResult = await orderResponse.json() as OrderResponse;
+            if (!orderResult.transaction) {
+                tx.rollback();
+                throw new Error("Order failed to generate transaction");
+            }
+            
+     
+            const transaction = VersionedTransaction.deserialize(
+                Buffer.from(orderResult.transaction, "base64"),
+            );
+            transaction.sign([pair]);
+
+           consola.info(`Executing SELL for ${pos.walletAddress} (${String(amountToSell)} tokens)...`);
+
+
+            const executeResponse = await fetchWithRetry(`${JUPITER_BASE_URL}/execute`, 5, 500, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-api-key": API_KEY,
+                    },
+                    body: JSON.stringify({
+                        signedTransaction: Buffer.from(transaction.serialize()).toString("base64"),
+                        requestId: orderResult.requestId,
+                    }),
+                });
+
+            if (!executeResponse.ok) {
+                consola.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
+                tx.rollback();
+                return;
+            }
+
+            const result = await executeResponse.json() as ExecuteResponse;
+
+            if (result.status === "Success") {
+                    consola.success(`Sell Success! https://solscan.io/tx/${result.signature}`);
+                    if (sellPercentage === 0 || sellPercentage === 100) {
+                         await tx.delete(positionsTable).where(eq(positionsTable.id, pos.id));
+                    } else {
+                        await tx.update(positionsTable)
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            .set({ tokenAmount: pos.tokenAmount! - amountToSell })
+                            .where(eq(positionsTable.id, pos.id));
+                    }
+                } else {
+                    tx.rollback();
+                    consola.error("Sell failed:", result);
+                }
+       } catch (err) {
+            tx.rollback();
+            consola.error(`Critical error selling for ${pos.walletAddress}:`, err);
+       }
+       });
+    })
+  );
+    await sleep(1200);
+}); 
   consola.success("Mass Sell operation completed.");
   return;
 }

@@ -11,7 +11,6 @@ Uninstallable=yes
 
 [Files]
 Source: "build\solana-bots-win.exe"; DestDir: "{app}"; DestName: "solana-bots.exe"; Flags: ignoreversion
-Source: "node_modules\better-sqlite3\build\Release\better_sqlite3.node"; DestDir: "{app}"; Flags: ignoreversion
 Source: "build\migrations\*"; DestDir: "{app}\migrations"; Flags: ignoreversion recursesubdirs
 
 [Icons]

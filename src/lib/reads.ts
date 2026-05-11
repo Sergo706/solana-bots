@@ -4,8 +4,7 @@ import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.j
 import { db } from "../db/connection.js";
 import { walletTable } from "../db/index.js";
 import { eq } from "drizzle-orm";
-import { decryptPrivateKey, getApiAndRpc } from "../utils/utils.js";
-
+import { decryptPrivateKey, getApiAndRpc, sleep } from "../utils/utils.js";
 
 
 export async function getAllWalletsView(password: string) {
@@ -20,6 +19,7 @@ export async function getAllWalletsView(password: string) {
 
     const connection = new Connection(rpc, "confirmed");
     const mainBalance = await connection.getBalance(keys.mainKey.pubkey);
+    await sleep(1000);
     
     const mainKeyData = {
         id: keys.mainKey.meta.id,
@@ -29,17 +29,22 @@ export async function getAllWalletsView(password: string) {
     };
 
     console.log(`Found ${String(keys.subKeys.length)} sub-wallets in DB.`);
-    const subKeysData = await Promise.all((keys.subKeys).map(async (s) => {
-        const bal = await connection.getBalance(s.pubkey);
-        return {
-            id: s.meta.id,
-            created_at: s.meta.createAt,
-            publickey: s.pubkey.toBase58(),
-            balanceOfSOL: bal / LAMPORTS_PER_SOL
-        };
-    }));
 
-    consola.box({ main: mainKeyData, subs: subKeysData });
+    const publicKeys = keys.subKeys.map(w => w.pubkey);
+    const accountsInfo = await connection.getMultipleAccountsInfo(publicKeys);
+
+        const walletData = keys.subKeys.map((wallet, index) => {
+            const acct = accountsInfo[index];
+            const lamports = acct?.lamports ?? 0;
+        return {
+            id: wallet.meta.id,
+            created_at: wallet.meta.createAt,
+            publickey: wallet.pubkey.toBase58(),
+            balanceOfSOL: lamports / LAMPORTS_PER_SOL
+            };
+        });
+
+    consola.box({ main: mainKeyData, subs: walletData });
     return;
 }
 
@@ -52,18 +57,18 @@ export async function getByPubkey(password: string, pubkey: string | PublicKey) 
         const keyStr = typeof pubkey === 'string' ? pubkey : pubkey.toBase58();
         const [target] = await db.select().from(walletTable).where(eq(walletTable.publicAddress, keyStr));
 
-        if (target?.privateKeyEncrypted || target?.publicAddress) {
-            consola.error('There is not configured wallets matching this pubkey.');
+        if (!target || (!target.privateKeyEncrypted && !target.publicAddress)) {
+            consola.error('There are no configured wallets matching this pubkey.');
             process.exit(1);
          } 
 
          
-        const decryptedWallet = decryptPrivateKey(target?.privateKeyEncrypted as Buffer, password);
+        const decryptedWallet = decryptPrivateKey(target.privateKeyEncrypted as Buffer, password);
         const mainWallet = Keypair.fromSecretKey(decryptedWallet);
         const mainBalance = await connection.getBalance(mainWallet.publicKey);
         const data = {
-            id: target?.id,
-            created_at: target?.createdAt,
+            id: target.id,
+            created_at: target.createdAt,
             publickey: keyStr,
             balanceOfSOL: mainBalance / LAMPORTS_PER_SOL
         };

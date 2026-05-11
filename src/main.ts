@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { defineCommand, runMain } from 'citty';
 import { consola } from 'consola';
 import { storeMainWallet, createWallets, drainWallets, splitFounds, readAllWallets, readWalletView, apiAndRpc, getAirDropC } from './commands/wallets.js';
@@ -7,6 +8,26 @@ import { range } from '@riavzon/utils';
 import { toNumb, rpcAndAPI } from './utils/utils.js';
 import { distributeGas } from './lib/split.js';
 import { buy, massOut, sell } from './commands/operation.js';
+import { volumeStart } from './lib/transactions/volumeBot/volumeStart.js';
+import { volumeStop } from './lib/transactions/volumeBot/volumeStop.js';
+import { volumeStatus } from './lib/transactions/volumeBot/volumeStatus.js';
+import { volumeBot } from './lib/transactions/volumeBot/volumeBotWorker.js';
+
+if (process.env['SOLANA_BOTS_INTERNAL'] === 'volume-worker') {
+  try {
+    await volumeBot(
+      process.env['TARGET_MINT']!,
+      Number(process.env['AMOUNT']),
+      Number(process.env['WALLETS']),
+      process.env['PASSWORD']!,
+      process.env['TTL'] ? Number(process.env['TTL']) : undefined,
+    );
+  } catch (err) {
+    consola.error(err);
+    process.exitCode = 1;
+  }
+  process.exit(0);
+}
 
 const start = defineCommand({
   meta: {
@@ -21,6 +42,9 @@ const start = defineCommand({
     split: splitFounds,
     'read-all': readAllWallets,
     read: readWalletView,
+    'volume-start': volumeStart,
+    'volume-stop': volumeStop,
+    'volume-status': volumeStatus,
     airdrop: getAirDropC,
     buy,
     sell,
