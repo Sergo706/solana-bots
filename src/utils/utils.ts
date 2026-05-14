@@ -102,7 +102,7 @@ export const rpcAndAPI = async (apiKey: string, rpc = 'https://api.mainnet.solan
     }
 
     consola.success('Saved encrypted api key, and rpc');
-    return;
+    return {ok: true, date: new Date().toISOString(), data: 'Saved encrypted api key, and rpc'};
 };
 
 

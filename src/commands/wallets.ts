@@ -20,7 +20,11 @@ export const storeMainWallet = defineCommand({
 
     async run({args}) {
        consola.start('Storing main wallet...');
-       await storeMain(args.password, args.pathToPrivateKey);
+       try {
+           await storeMain(args.password, args.pathToPrivateKey);
+       } catch {
+            process.exit(1);
+       }
     }
 });
 
@@ -38,7 +42,11 @@ export const apiAndRpc = defineCommand({
 
     async run({args}) {
        consola.start('Storing main api and rpc...');
-       await rpcAndAPI(args.api, args.rpc, args.password);
+       try {
+           await rpcAndAPI(args.api, args.rpc, args.password);
+        } catch {
+            process.exit(1);
+       }
     }
 });
 
@@ -79,7 +87,11 @@ export const drainWallets = defineCommand({
 
     async run({args}) {
        const num = parseFloat(args.fee);
-        await drainWalletsToMain(args.password, num);
+       try {
+           await drainWalletsToMain(args.password, num);
+        } catch {
+            process.exit(1);
+       }
     }
 
 });
@@ -99,7 +111,11 @@ export const splitFounds = defineCommand({
     async run({args}) {
         const num = parseFloat(args.amount);
         const fees = parseFloat(args.fee);
-        await distributeGas(args.password, num, fees);
+        try {
+            await distributeGas(args.password, num, fees);
+        } catch {
+            process.exit(1);
+       }
     }
 });
 
@@ -114,7 +130,11 @@ export const readAllWallets = defineCommand({
     },
 
     async run({args}) {
-        await getAllWalletsView(args.password);
+        try {
+            await getAllWalletsView(args.password);
+        } catch {
+            process.exit(1);
+       }
     }
 });
 
@@ -130,7 +150,11 @@ export const readWalletView= defineCommand({
     },
 
     async run({args}) {
-        await getByPubkey(args.password, args.pubkey);
+        try {
+            await getByPubkey(args.password, args.pubkey);
+        } catch {
+            process.exit(1);
+       }
     }
 });
 

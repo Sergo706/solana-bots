@@ -34,7 +34,11 @@ export async function massOutForAllWallets(password: string) {
 
   if (positions.length === 0) {
     consola.warn(`No positions found in database`);
-    return;
+    return {
+        ok: false,
+        date: new Date().toISOString(),
+        reason: `No positions found in database`
+    };
   }
 
   const walletMap = new Map<string, Keypair>();
@@ -53,6 +57,19 @@ export async function massOutForAllWallets(password: string) {
  
 
     consola.info(`Found ${String(positions.length)} token positions to unwind.`);
+    const returnType = {
+        ok: true,
+        date: new Date().toISOString(),
+        data: {
+            positionsClosed: 0,
+            walletsCount: walletMap.entries().toArray().length,
+            failedWallets: [{
+                pubkey: '',
+                reason: ''
+            }]
+        }
+    };
+
     await chunkProcess(positions, 1, async (chunk) => {
         await Promise.all(
            chunk.map(async (pos) => {
@@ -66,6 +83,7 @@ export async function massOutForAllWallets(password: string) {
               try {
                 if ((pos.walletRemainingBalance ?? 0n) < GAS_FEE_BUFFER) {
                     consola.warn(`Skipping ${pos.walletAddress}: no SOL for gas.`);
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: 'Not enough SOL for fees'});
                     tx.rollback();
                     return;
                 }
@@ -84,6 +102,7 @@ export async function massOutForAllWallets(password: string) {
                     
                 if (!orderRes.ok) {
                     consola.error(`/order failed for ${pos.targetMintAddress}: ${String(orderRes.status)}`, await orderRes.text());
+                     returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Jupiter api call to /order is failed. ${String(orderRes.status)}`});
                     tx.rollback();
                     return;
                 }
@@ -112,6 +131,7 @@ export async function massOutForAllWallets(password: string) {
 
                 if (!executeRes.ok) {
                         consola.error(`/execute failed for ${pos.targetMintAddress}: ${String(executeRes.status)}`, await executeRes.text());
+                        returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Jupiter api call to /execute is failed. ${String(executeRes.status)}`});
                         tx.rollback();
                         return;
                 }
@@ -121,12 +141,15 @@ export async function massOutForAllWallets(password: string) {
                 if (result.status === "Success") {
                     consola.success(`Cleaned up ${pos.targetMintAddress}: ${result.signature}`);
                     await tx.delete(positionsTable).where(eq(positionsTable.id, pos.id));
+                    returnType.data.positionsClosed = returnType.data.positionsClosed + 1;
                 } else {
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Swap failed`});
                     tx.rollback();
                     consola.error(`Swap failed for ${pos.targetMintAddress}:`, result);
                 }
             } catch (err) {
                 tx.rollback();
+                returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Critical error for wallet`});
                 consola.error(`Critical error for wallet ${pos.walletAddress}:`, err); 
             }
              });
@@ -135,5 +158,9 @@ export async function massOutForAllWallets(password: string) {
         await sleep(1200);
     });
    consola.success("Mass Out operation completed.");
-   return;
+    if (returnType.data.failedWallets.every(d => d.pubkey && d.pubkey !== '')) {
+      returnType.data.failedWallets = [];
+     }
+
+  return returnType;
 }

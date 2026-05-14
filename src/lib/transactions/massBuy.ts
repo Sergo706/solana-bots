@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { 
   Connection, 
   Keypair, 
@@ -21,7 +22,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
 
  if (rpc.includes('devnet')) {
     consola.error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
-    process.exit(1);
+    throw new Error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
 }
 
  const API_KEY = rawKey;
@@ -70,6 +71,18 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
          });
     }
 
+    const returnType = {
+        ok: true,
+        date: new Date().toISOString(),
+        data: {
+            positionsOpened: 0,
+            walletsCount: walletData.length,
+            failedWallets: [{
+                pubkey: '',
+                reason: ''
+            }]
+        }
+    };
     await chunkProcess(walletData, chunksToProcess, async (chunk) => {
         await Promise.all(
             chunk.map(async ({balance, wallet}) => {
@@ -78,6 +91,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
 
                     if (balance < (lamportsPerWallet + NETWORK_FEE_BUFFER)) {
                         consola.warn(`Skipping ${wallet.publicKey.toBase58()}: Insufficient SOL for swap + buy.`);
+                        returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Insufficient SOL for swap + buy. ${balance} / ${lamportsPerWallet + NETWORK_FEE_BUFFER}`});
                         tx.rollback();
                         return; 
                      }
@@ -97,12 +111,14 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
 
                     if (!orderResponse.ok) {
                         consola.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
+                        returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Jupiter api call to /order is failed. ${String(orderResponse.status)}`});
                         tx.rollback();
                         return;
                     }
 
                     const orderResult = await orderResponse.json() as OrderResponse;
                     if (!orderResult.transaction) {
+                        returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: "Order failed to generate transaction"});
                         tx.rollback();
                         throw new Error("Order failed to generate transaction");
                     };
@@ -116,6 +132,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
 
                     if (balance < totalSolRequired) {
                         consola.error(`Wallet ${wallet.publicKey.toBase58()} can't afford the Jupiter Platform Fee in SOL.`);
+                        returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `can't afford the Jupiter Platform Fee in SOL. ${balance} / ${totalSolRequired}`});
                         tx.rollback();
                         return;
                     }
@@ -140,12 +157,14 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
 
                     if (!executeResponse.ok) {
                         consola.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
+                        returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Jupiter api call to /execute is failed. ${String(executeResponse.status)}`});
                         tx.rollback();
                         return;
                     }
                     const result = await executeResponse.json() as ExecuteResponse;
                     if (result.status === "Success") {
                             consola.success(`Buy Success! https://solscan.io/tx/${result.signature}`);
+                            returnType.data.positionsOpened = returnType.data.positionsOpened + 1;
                         try {
                             await tx.insert(positionsTable).values({
                                 walletAddress: wallet.publicKey.toBase58(),
@@ -159,6 +178,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                         }
                     } else {
                         tx.rollback();
+                        returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `"Swap failed:", ${JSON.stringify(result, null, 2)}`});
                         consola.error("Swap failed:", JSON.stringify(result, null, 2));
                     }
                  } catch (err) {
@@ -170,5 +190,8 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
          await sleep(1000);
     });
   consola.success("Mass Buy operation completed.");
-  return;
+    if (returnType.data.failedWallets.every(d => d.pubkey && d.pubkey !== '')) {
+      returnType.data.failedWallets = [];
+  }
+  return returnType; 
 }

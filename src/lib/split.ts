@@ -27,7 +27,7 @@ export async function distributeGas(password: string, amountPerWallet: number | 
 
     if (!wallet?.privateKeyEncrypted) {
         consola.error('The main wallet is not configured. configure it first');
-        process.exit(1);
+        throw new Error('The main wallet is not configured. configure it first');
     }
 
     const decryptedWallet = decryptPrivateKey(wallet.privateKeyEncrypted as Buffer, password);
@@ -39,7 +39,7 @@ export async function distributeGas(password: string, amountPerWallet: number | 
 
     if (subWalletAddresses.length === 0) {
         consola.error('There is not configured wallets in the database yet. Create a few first.');
-        process.exit(1);
+        throw new Error('There is not configured wallets in the database yet. Create a few first.');
     }
 
     const amountInLamports = BigInt(Math.floor(parsedAmount * LAMPORTS_PER_SOL));
@@ -56,7 +56,7 @@ export async function distributeGas(password: string, amountPerWallet: number | 
     if (currentBalance < totalRequired) {
         const missing = Number(totalRequired - currentBalance) / LAMPORTS_PER_SOL;
         consola.error(`Insufficient funds. You need ${missing.toFixed(4)} more SOL in your main wallet.`);
-        process.exit(1);
+        throw new Error(`Insufficient funds. You need ${missing.toFixed(4)} more SOL in your main wallet.`);
     }
 
         const { blockhash } = await connection.getLatestBlockhash();
@@ -87,9 +87,16 @@ export async function distributeGas(password: string, amountPerWallet: number | 
     consola.info(`Last Sig: ${signatures[signatures.length - 1] ?? 'No signature'}`);
 
     consola.success(`Successfully distributed founds across wallets`);
-    return;
+    return {
+        ok: true,
+        date: new Date().toISOString(),
+        data: {
+            sent: `Sent ${String(signatures.length)} transactions`,
+            lastSignature: `Last Sig: ${signatures[signatures.length - 1] ?? 'No signature'}`
+        }
+    };
     } catch (err) {
         consola.error(`Error distributing founds`, err);
-        process.exit(1);
+        throw new Error(`Error distributing founds`);
     }
 }

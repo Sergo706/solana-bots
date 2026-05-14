@@ -1,11 +1,9 @@
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import { drizzle } from 'drizzle-orm/libsql';
+import { migrate } from "drizzle-orm/libsql/migrator";
 import * as schema from "./index.js";
 import path from "path";
-import { Database } from "bun:sqlite";
 import fs from 'node:fs';
 import os from 'node:os';
-
 
 const dataDir =
   process.platform === "win32"
@@ -16,15 +14,11 @@ const dataDir =
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
-const sqlite = new Database(
-  path.resolve(dataDir, "wallets.db")
-);
+export const db = drizzle({ connection: { url: `file:${dataDir}/wallets.db`} ,schema });
 
-export const db = drizzle(sqlite, { schema });
+// const appDir = path.dirname(process.execPath);
+// const migrationsFolder = path.join(appDir, "migrations");
 
-const appDir = path.dirname(process.execPath);
-const migrationsFolder = path.join(appDir, "migrations");
-
-migrate(db, { 
-  migrationsFolder
-});
+// void migrate(db, { 
+//   migrationsFolder
+// });

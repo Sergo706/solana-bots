@@ -45,7 +45,7 @@ export async function getAllWalletsView(password: string) {
         });
 
     consola.box({ main: mainKeyData, subs: walletData });
-    return;
+    return { main: mainKeyData, subs: walletData };
 }
 
 
@@ -59,7 +59,7 @@ export async function getByPubkey(password: string, pubkey: string | PublicKey) 
 
         if (!target || (!target.privateKeyEncrypted && !target.publicAddress)) {
             consola.error('There are no configured wallets matching this pubkey.');
-            process.exit(1);
+            throw new Error('There are no configured wallets matching this pubkey.');
          } 
 
          
@@ -73,10 +73,10 @@ export async function getByPubkey(password: string, pubkey: string | PublicKey) 
             balanceOfSOL: mainBalance / LAMPORTS_PER_SOL
         };
         consola.box({ main: data });
-        return;
+        return { main: data };
 
     } catch (err) {
         consola.box('Error getting data', err);
-        process.exit(1);
+        throw new Error(`Error Getting data`);
     }
 }

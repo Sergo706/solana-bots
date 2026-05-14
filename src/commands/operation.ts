@@ -46,8 +46,12 @@ export const buy = defineCommand({
             consola.error("The 'amounts' argument must be a valid number greater than 0.");
             process.exit(1);
         }
-
-       await massBuy(args.target, amountsNumb, numbWallets, args.password);
+    try {
+        await massBuy(args.target, amountsNumb, numbWallets, args.password);
+    } catch(err) {
+        consola.fail('Mass buy operation failed.', err);
+        process.exit(1);
+    }
     }
 });
 
@@ -97,7 +101,12 @@ export const sell = defineCommand({
             process.exit(1);
         }
 
-        await massSell(args.target, numWallets, args.password, sellPct);
+        try {
+            await massSell(args.target, numWallets, args.password, sellPct);
+        } catch(err) {
+            consola.fail('Mass sell operation failed.', err);
+            process.exit(1);
+        }
         consola.success('Mass sell operation completed.');
     }
 });
@@ -119,7 +128,12 @@ export const massOut = defineCommand({
 
     async run({ args }) {
         consola.warn('⚠️  MASS OUT INITIATED: This will sell every token in your sub-wallets for SOL.');
-        await massOutForAllWallets(args.password);
+        try {
+            await massOutForAllWallets(args.password);
+        } catch(err) {
+            consola.fail('Mass out operation failed.', err);
+            process.exit(1);
+        }
         consola.success('Mass Out operation completed. All wallets have been cleaned.');
     }
 });

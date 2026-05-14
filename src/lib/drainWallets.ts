@@ -22,7 +22,7 @@ export async function drainWalletsToMain(password: string, fee = 5000) {
     
     if (!mainWalletData?.privateKeyEncrypted || !mainWalletData.publicAddress) {
         consola.error('Main wallet not configured.');
-        return;
+        throw new Error('Main wallet not configured.');
     }
 
     const destPublicKey = new PublicKey(mainWalletData.publicAddress);
@@ -33,7 +33,7 @@ export async function drainWalletsToMain(password: string, fee = 5000) {
 
     if (subWalletAddresses.length === 0) {
         consola.error('There is not configured wallets in the database yet. Create a few first.');
-        process.exit(1);
+        throw new Error('There is not configured wallets in the database yet. Create a few first.');
     }
 
     const subWalletDecrypted = subWalletAddresses.map((sub) => {
@@ -79,7 +79,7 @@ export async function drainWalletsToMain(password: string, fee = 5000) {
 
     if (txPromises.length === 0) {
         consola.info('No wallets had enough funds to drain.');
-        return;
+        return { ok: false, date: new Date().toISOString(), reason: 'No wallets had enough funds to drain.'};
     }
 
    try {
@@ -93,9 +93,9 @@ export async function drainWalletsToMain(password: string, fee = 5000) {
             }
         }));
         consola.success(`Successfully drained ${String(signatures.length)} wallets.`);
-        return;
+        return { ok: true, date: new Date().toISOString(), data: `Successfully drained ${String(signatures.length)} wallets.`};
     } catch (err) {
         consola.error('Error during batch drain:', err);
-        process.exit(1);
+        throw new Error('Error during batch drain');
     }
 }

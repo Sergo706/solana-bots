@@ -27,7 +27,7 @@ export async function storeMain(password: string, secretPath: string) {
 
     if (main?.privateKeyEncrypted || main?.publicAddress) {
         consola.error(`MAIN wallet already exists!`);
-        process.exit(1);
+        throw new Error(`MAIN wallet already exists!`);
     }
     
     const filePath = path.resolve(process.cwd(), secretPath);
@@ -35,7 +35,7 @@ export async function storeMain(password: string, secretPath: string) {
 
     if (!secretKeyString) {
         consola.error(`File path didn't found at ${secretPath}`);
-        process.exit(1);
+        throw new Error(`File path didn't found at ${secretPath}`);
     }
 
     try {
@@ -71,6 +71,6 @@ export async function storeMain(password: string, secretPath: string) {
     } catch (err) {
         consola.error("Invalid secret key format. Ensure it is a JSON array of numbers, a base58 string, base64, or hex.");
         consola.error(err);
-        process.exit(1);
+        throw new Error("Invalid secret key format. Ensure it is a JSON array of numbers, a base58 string, base64, or hex.");
     }
 }

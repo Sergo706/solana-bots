@@ -21,7 +21,7 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
  
  if (rpc.includes('devnet')) {
     consola.error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
-    process.exit(1);
+    throw new Error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
 }
 
  const API_KEY = rawKey;
@@ -48,7 +48,11 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
 
   if (positions.length === 0) {
     consola.warn(`No positions found in database for mint: ${targetMintAddress}`);
-    return;
+    return{ 
+        ok: false, 
+        date: new Date().toISOString(),
+        data: `No positions found in database for mint: ${targetMintAddress}`
+    };
   }
 
   if (!chosenWallets || chosenWallets.length === 0) {
@@ -65,7 +69,18 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
     }
   }
 
-
+    const returnType = {
+        ok: true,
+        date: new Date().toISOString(),
+        data: {
+            positionsClosed: 0,
+            walletsCount: walletMap.entries().toArray().length,
+            failedWallets: [{
+                pubkey: '',
+                reason: ''
+            }]
+        }
+    };
     consola.start(`Selling ${targetMintAddress} from ${positions.length.toString()} active positions...`);            
      await chunkProcess(positions, chunksToProcess, async (chunk) => {
         await Promise.all(
@@ -80,6 +95,7 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
             try {
                 if ((pos.walletRemainingBalance ?? 0n) < GAS_FEE_BUFFER) {
                     consola.warn(`Skipping ${pos.walletAddress}: No SOL for gas.`);
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: 'Not enough SOL for fees'});
                     tx.rollback();
                     return;
                 }
@@ -91,6 +107,7 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
 
                 if (!amountToSell || amountToSell <= 0n) {
                     consola.info(`Skipping ${pos.walletAddress}: sell amount is 0.`);
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: 'sell amount is 0.'});
                     tx.rollback();
                     return;
                 }
@@ -114,12 +131,14 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
 
             if (!orderResponse.ok) {
                 consola.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
+                returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Jupiter api call to /order is failed. ${String(orderResponse.status)}`});
                 tx.rollback();
                 return;
             }
 
             const orderResult = await orderResponse.json() as OrderResponse;
             if (!orderResult.transaction) {
+                returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Order failed to generate transaction`});
                 tx.rollback();
                 throw new Error("Order failed to generate transaction");
             }
@@ -147,6 +166,7 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
 
             if (!executeResponse.ok) {
                 consola.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
+                returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Jupiter api call to /execute is failed. ${String(executeResponse.status)}`});
                 tx.rollback();
                 return;
             }
@@ -157,6 +177,7 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
                     consola.success(`Sell Success! https://solscan.io/tx/${result.signature}`);
                     if (sellPercentage === 0 || sellPercentage === 100) {
                          await tx.delete(positionsTable).where(eq(positionsTable.id, pos.id));
+                         returnType.data.positionsClosed = returnType.data.positionsClosed + 1;
                     } else {
                         await tx.update(positionsTable)
                             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -164,10 +185,12 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
                             .where(eq(positionsTable.id, pos.id));
                     }
                 } else {
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Sell failed`});
                     tx.rollback();
                     consola.error("Sell failed:", result);
                 }
        } catch (err) {
+            returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Critical error selling for ${pos.walletAddress}`});
             tx.rollback();
             consola.error(`Critical error selling for ${pos.walletAddress}:`, err);
        }
@@ -176,6 +199,11 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
   );
     await sleep(1200);
 }); 
+
   consola.success("Mass Sell operation completed.");
-  return;
+  if (returnType.data.failedWallets.every(d => d.pubkey && d.pubkey !== '')) {
+      returnType.data.failedWallets = [];
+  }
+
+  return returnType;
 }

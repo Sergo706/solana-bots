@@ -13,7 +13,7 @@ export async function getAllWallets(password: string) {
   
     if (!main?.privateKeyEncrypted) {
         consola.error('Main wallet is missing from the database.');
-        process.exit(1);
+        throw new Error('Main wallet is missing from the database.');
     }
         
     if (subKeys.length === 0) {
@@ -49,6 +49,6 @@ export async function getAllWallets(password: string) {
     };
   }  catch(err) {
         consola.error('error getting keys', err);
-        process.exit(1);
+        throw new Error('Getting keys');
   }
 }

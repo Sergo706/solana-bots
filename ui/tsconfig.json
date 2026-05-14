@@ -1,0 +1,42 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "ignoreDeprecations": "6.0",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "paths": {
+      "@solana-bots/*": [
+        "../src/*"
+      ],
+      "@/*": [
+        "src/*"
+      ],
+      "#build/ui/*": [
+        "node_modules/.nuxt-ui/ui/*"
+      ]
+    },
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "composite": true,
+    "types": [
+      "node",
+      "vite/client"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src/**/*.d.ts",
+    "../src/**/*.ts",
+    "src/types/interface.d.ts",
+    "auto-imports.d.ts",
+    "components.d.ts",
+    "vite.renderer.config.ts",
+    "forge.env.d.ts",
+    "forge.config.ts",
+  ]
+}
