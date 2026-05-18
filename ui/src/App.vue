@@ -3,11 +3,13 @@
 </script>
 <template>
   <UApp>
-    <RouterView v-slot="{ Component }">
-      <component
-        :is="Component"
-        :key="$route.path"
-      />
-    </RouterView>
+    <UMain>
+      <RouterView v-slot="{ Component }">
+        <component
+          :is="Component"
+          :key="$route.path"
+        />
+      </RouterView>
+    </UMain>
   </UApp>
 </template>

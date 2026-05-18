@@ -1,5 +1,20 @@
 <script setup lang="ts">
+import WalletsManagementTable from '@/components/Tables/WalletsManagementTable.vue';
+import { useGetWalletsManagement } from '@/composables/getWalletManagement';
 import Layout from '@/Layout.vue';
+import { onMounted } from 'vue';
+
+
+const { error, loading, getAll, data } = useGetWalletsManagement();
+
+const retry = async () => {
+    await getAll();
+};
+
+onMounted(async () => {
+    await getAll();
+});
+
 </script>
 
 <template>
@@ -12,53 +27,62 @@ import Layout from '@/Layout.vue';
           </template>
 
           <template #right>
+            <TradeModal
+              btn-size="sm"
+              :btn-color="'success'"
+              :btn-label="'Buy'"
+              :btn-icon="'i-lucide-shopping-cart'" 
+              title="Buy"
+              :msg="'Start new positions'"
+            > 
+              <template #contentModal>
+                <BuyForm />
+              </template>
+            </TradeModal>
+          </template>
+        </UDashboardNavbar>
+
+        <UDashboardToolbar>
+          <template #left>
             <UButton
-              label="Create API Token"
+              label="Refresh Data"
               variant="subtle"
               color="primary"
               size="sm"
-              trailing-icon="lucide:plus"
+              trailing-icon="i-lucide-rotate-cw"
+              @click.prevent="retry"
             />
           </template>
-        </UDashboardNavbar>
+        </UDashboardToolbar>
       </template>
 
 
       <template #body>
-        <div class="flex flex-col gap-10 pb-4">
-          <UButton
-            v-if="1"
-            class="ml-auto cursor-pointer -mt-7"
-            to="/dashboard/manage"
-            variant="subtle"
-            label="Manage"
-          />
-          <UEmpty 
-            v-else
-            class="flex-1 min-h-[550px] grid place-content-center text-center"
-            icon="i-lucide-key-round"
-            title="No tokens yet" 
-            description="It looks like you haven't created any tokens yet. Create one to get started."
-            :ui="{root: 'ring-0'}"
-            :actions="[
-              {
-                icon: 'i-lucide-key-round',
-                label: 'Create token',
-                class: 'cursor-pointer',
-                variant: 'subtle',
-                color: 'primary',
-              },
-              {
-                icon: 'i-lucide-flask-conical',
-                label: 'Playground',
-                to: '/dashboard/playground',
-                class: 'cursor-pointer',
-                color: 'primary',
-                variant: 'outline'
-              }
-            ]"
-          />
-        </div>
+        <OffensiveSpinner 
+          v-if="loading"
+          class="mt-10"
+        />
+
+        <UAlert
+          v-if="error && error !== 'NDATA'"
+          title="Error!"
+          :description="error"
+          color="error"
+          variant="subtle"
+          :actions="[
+            {
+              label: 'Retry',
+              color: 'warning',
+              variant: 'subtle',
+              onClick: () => retry()
+            },
+          ]"
+        />
+
+        <WalletsManagementTable
+          v-if="!loading && (!error || error === 'NDATA')"
+          :data="data ?? []"
+        />
       </template>
     </UDashboardPanel>
   </Layout>

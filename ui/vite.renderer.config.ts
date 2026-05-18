@@ -7,7 +7,16 @@ import path from 'node:path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [vue(), ui()],
+  plugins: [
+    vue(),     
+    ui({
+      ui: {
+        colors: {
+          primary: 'accent',
+          neutral: 'riavzon',
+        }
+      }
+    })],
   publicDir: 'assets/public',
   resolve: {
     alias: {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { 
   Keypair, 
   VersionedTransaction,
@@ -16,7 +17,7 @@ const GAS_FEE_BUFFER = BigInt(0.005 * LAMPORTS_PER_SOL);
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 const JUPITER_BASE_URL = "https://api.jup.ag/swap/v2";
 
-export async function massSell(targetMintAddress: string, numberOfWallets: number, password: string, sellPercentage = 0, chunksToProcess = 1, chosenWallets?: Keypair[]) {
+export async function massSell(targetMintAddress: string, numberOfWallets: number, password: string, sellPercentage = 0, chunksToProcess = 1, chosenWallets?: Keypair[], targetedPositionsToSell?: number[]) {
  const { rpc, rawKey } = await getApiAndRpc(password);
  
  if (rpc.includes('devnet')) {
@@ -43,6 +44,9 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
     filters.push(inArray(positionsTable.walletAddress, filterAddresses));
   } 
 
+  if (targetedPositionsToSell && targetedPositionsToSell.length > 0) {
+      filters.push(inArray(positionsTable.id, targetedPositionsToSell));
+  }
 
   const positions = await db.select().from(positionsTable).where(and(...filters)).limit(numberOfWallets);
 
@@ -51,7 +55,7 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
     return{ 
         ok: false, 
         date: new Date().toISOString(),
-        data: `No positions found in database for mint: ${targetMintAddress}`
+        reason: `No positions found in database for mint: ${targetMintAddress}`
     };
   }
 
@@ -74,29 +78,20 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
         date: new Date().toISOString(),
         data: {
             positionsClosed: 0,
-            walletsCount: walletMap.entries().toArray().length,
-            failedWallets: [{
-                pubkey: '',
-                reason: ''
-            }]
+            walletsCount: walletMap.size,
+            failedWallets: [] as { pubkey: string, reason: string }[]
         }
     };
     consola.start(`Selling ${targetMintAddress} from ${positions.length.toString()} active positions...`);            
      await chunkProcess(positions, chunksToProcess, async (chunk) => {
         await Promise.all(
             chunk.map(async (pos) => {
-             return db.transaction(async (tx) => { 
                 const pair = walletMap.get(pos.walletAddress);
-                if (!pair) {
-                    tx.rollback();
-                    return;
-                }
-
-            try {
+                if (!pair) return;
+                
                 if ((pos.walletRemainingBalance ?? 0n) < GAS_FEE_BUFFER) {
                     consola.warn(`Skipping ${pos.walletAddress}: No SOL for gas.`);
                     returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: 'Not enough SOL for fees'});
-                    tx.rollback();
                     return;
                 }
                 
@@ -108,101 +103,109 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
                 if (!amountToSell || amountToSell <= 0n) {
                     consola.info(`Skipping ${pos.walletAddress}: sell amount is 0.`);
                     returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: 'sell amount is 0.'});
-                    tx.rollback();
                     return;
                 }
 
-                consola.info(
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    `Wallet ${pos.walletAddress} holds ${pos.tokenAmount!.toString()} tokens. Selling ${amountToSell.toString()}...`,
+
+                try {
+
+                    consola.info(
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        `Wallet ${pos.walletAddress} holds ${pos.tokenAmount!.toString()} tokens. Selling ${amountToSell.toString()}...`,
+                    );
+
+                    const orderUrl = new URL(`${JUPITER_BASE_URL}/order`);
+                    orderUrl.searchParams.append("inputMint", targetMintAddress);
+                    orderUrl.searchParams.append("outputMint", SOL_MINT);
+                    orderUrl.searchParams.append("amount", String(amountToSell));
+                    orderUrl.searchParams.append('taker', pos.walletAddress);
+
+                    const orderResponse = await fetchWithRetry(String(orderUrl), 5, 500, { 
+                        headers: { 
+                            "x-api-key": API_KEY 
+                        } 
+                    });
+
+                if (!orderResponse.ok) {
+                    consola.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Jupiter api call to /order is failed. ${String(orderResponse.status)}`});
+                    return;
+                }
+
+                const orderResult = await orderResponse.json() as OrderResponse;
+                if (!orderResult.transaction) {
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Order failed to generate transaction`});
+                    return;
+                }
+                
+        
+                const transaction = VersionedTransaction.deserialize(
+                    Buffer.from(orderResult.transaction, "base64"),
                 );
+                transaction.sign([pair]);
 
-                const orderUrl = new URL(`${JUPITER_BASE_URL}/order`);
-                orderUrl.searchParams.append("inputMint", targetMintAddress);
-                orderUrl.searchParams.append("outputMint", SOL_MINT);
-                orderUrl.searchParams.append("amount", String(amountToSell));
-                orderUrl.searchParams.append('taker', pos.walletAddress);
-
-                const orderResponse = await fetchWithRetry(String(orderUrl), 5, 500, { 
-                    headers: { 
-                        "x-api-key": API_KEY 
-                    } 
-                });
-
-            if (!orderResponse.ok) {
-                consola.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
-                returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Jupiter api call to /order is failed. ${String(orderResponse.status)}`});
-                tx.rollback();
-                return;
-            }
-
-            const orderResult = await orderResponse.json() as OrderResponse;
-            if (!orderResult.transaction) {
-                returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Order failed to generate transaction`});
-                tx.rollback();
-                throw new Error("Order failed to generate transaction");
-            }
-            
-     
-            const transaction = VersionedTransaction.deserialize(
-                Buffer.from(orderResult.transaction, "base64"),
-            );
-            transaction.sign([pair]);
-
-           consola.info(`Executing SELL for ${pos.walletAddress} (${String(amountToSell)} tokens)...`);
+                consola.info(`Executing SELL for ${pos.walletAddress} (${String(amountToSell)} tokens)...`);
 
 
-            const executeResponse = await fetchWithRetry(`${JUPITER_BASE_URL}/execute`, 5, 500, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-api-key": API_KEY,
-                    },
-                    body: JSON.stringify({
-                        signedTransaction: Buffer.from(transaction.serialize()).toString("base64"),
-                        requestId: orderResult.requestId,
-                    }),
-                });
+                const executeResponse = await fetchWithRetry(`${JUPITER_BASE_URL}/execute`, 5, 500, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-api-key": API_KEY,
+                        },
+                        body: JSON.stringify({
+                            signedTransaction: Buffer.from(transaction.serialize()).toString("base64"),
+                            requestId: orderResult.requestId,
+                        }),
+                    });
 
-            if (!executeResponse.ok) {
-                consola.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
-                returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Jupiter api call to /execute is failed. ${String(executeResponse.status)}`});
-                tx.rollback();
-                return;
-            }
+                if (!executeResponse.ok) {
+                    consola.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Jupiter api call to /execute is failed. ${String(executeResponse.status)}`});
+                    return;
+                }
 
-            const result = await executeResponse.json() as ExecuteResponse;
+                const result = await executeResponse.json() as ExecuteResponse;
 
-            if (result.status === "Success") {
-                    consola.success(`Sell Success! https://solscan.io/tx/${result.signature}`);
-                    if (sellPercentage === 0 || sellPercentage === 100) {
-                         await tx.delete(positionsTable).where(eq(positionsTable.id, pos.id));
-                         returnType.data.positionsClosed = returnType.data.positionsClosed + 1;
-                    } else {
-                        await tx.update(positionsTable)
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                            .set({ tokenAmount: pos.tokenAmount! - amountToSell })
-                            .where(eq(positionsTable.id, pos.id));
-                    }
+                if (result.status === "Success") {
+                        consola.success(`Sell Success! https://solscan.io/tx/${result.signature}`);
+                      try {
+                        if (sellPercentage === 0 || sellPercentage === 100) {
+                            await db.delete(positionsTable).where(eq(positionsTable.id, pos.id));
+                            returnType.data.positionsClosed = returnType.data.positionsClosed + 1;
+                        } else {
+                            await db.update(positionsTable)
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                .set({ tokenAmount: pos.tokenAmount! - amountToSell })
+                                .where(eq(positionsTable.id, pos.id));
+                        }
+                        } catch (err) {
+                            consola.error(`CRITICAL: Sell succeeded on-chain but DB update failed for ${pos.walletAddress}`, err);
+                        }
                 } else {
-                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Sell failed`});
-                    tx.rollback();
+                    returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Sell failed ${result.error ?? ''}`});
                     consola.error("Sell failed:", result);
                 }
-       } catch (err) {
-            returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: `Critical error selling for ${pos.walletAddress}`});
-            tx.rollback();
-            consola.error(`Critical error selling for ${pos.walletAddress}:`, err);
-       }
-       });
+        } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                returnType.data.failedWallets.push({pubkey: pos.walletAddress, reason: message});
+                consola.error(`Critical error selling for ${pos.walletAddress}:`, err);
+        }
     })
   );
     await sleep(1200);
 }); 
 
   consola.success("Mass Sell operation completed.");
-  if (returnType.data.failedWallets.every(d => d.pubkey && d.pubkey !== '')) {
-      returnType.data.failedWallets = [];
+  consola.info(`Positions Closed:`, returnType.data.positionsClosed);
+  consola.info(`Wallets Processed:`, returnType.data.walletsCount);
+  consola.info(`Failed Operations:`, returnType.data.failedWallets.length);
+
+  if (returnType.data.failedWallets.length > 0) {
+    consola.info("Failures:");
+    returnType.data.failedWallets.forEach((fail, i) => {
+      consola.error(`  ${(i + 1)}. ${fail.pubkey}: ${fail.reason}`);
+    });
   }
 
   return returnType;

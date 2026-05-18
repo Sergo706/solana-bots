@@ -7,13 +7,13 @@ import {
 } from '@solana/web3.js';
 import { db } from '../db/connection.js';
 import { walletTable } from '../db/index.js';
-import { eq } from 'drizzle-orm';
+import { eq, inArray, SQL, and } from 'drizzle-orm';
 import consola from 'consola';
 import { decryptPrivateKey, getApiAndRpc, sleep } from '../utils/utils.js';
 
 
 
-export async function drainWalletsToMain(password: string, fee = 5000) {
+export async function drainWalletsToMain(password: string, targetedWallets?: {publicAddress: string, id: number}[], fee = 5000) {
     const { rpc } = await getApiAndRpc(password);
     
     const connection = new Connection(rpc, 'confirmed');
@@ -24,12 +24,20 @@ export async function drainWalletsToMain(password: string, fee = 5000) {
         consola.error('Main wallet not configured.');
         throw new Error('Main wallet not configured.');
     }
-
+    const filters: SQL[] = [eq(walletTable.isMainWallet, false)];
     const destPublicKey = new PublicKey(mainWalletData.publicAddress);
-    
+
+    if (targetedWallets && targetedWallets.length > 0) {
+        const ids = targetedWallets.map((id) => id.id);
+        const pubkeys = targetedWallets.map((id) => id.publicAddress);
+
+        filters.push(inArray(walletTable.id, ids));
+        filters.push(inArray(walletTable.publicAddress, pubkeys));
+    }
+
     const subWalletAddresses = await db.select()
                     .from(walletTable)
-                    .where(eq(walletTable.isMainWallet, false));
+                    .where(and(...filters));
 
     if (subWalletAddresses.length === 0) {
         consola.error('There is not configured wallets in the database yet. Create a few first.');

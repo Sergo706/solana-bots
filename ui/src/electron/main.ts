@@ -6,6 +6,10 @@ import { fileURLToPath } from 'node:url';
 import walletActions from './walletsIPC';
 import { rpcAndAPI } from '@solana-bots/utils/utils';
 import tradingActions from './tradingIPC';
+import { getOpenPositions } from './getPositions';
+import { checkConfigStatus } from './checkOnBoarding';
+import { migrateForElec } from '@solana-bots/db/connection';
+import { getPositionsView } from './utils/getTerminalView';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let vault: string | null = null;
@@ -53,6 +57,7 @@ session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
 app.disableHardwareAcceleration();
 
 void app.whenReady().then(() => { 
+  void migrateForElec();
   createWindow();
 
   ipcMain.handle('save-password', (_event, password: string) => {
@@ -71,7 +76,6 @@ void app.whenReady().then(() => {
         return { ok: false, date: new Date().toISOString(), reason: 'ENCRYPTION_FAILED' };
      }
 });
-
   ipcMain.handle('api:rpc:save', async (_event, api: string, rpc: string) => {
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
@@ -92,7 +96,10 @@ void app.whenReady().then(() => {
 
     walletActions.forEach((action) => { action(() => vault); });
     tradingActions.forEach((action) => { action(() => vault); });
-
+    ipcMain.handle('get:positions', async () => await getOpenPositions());
+    ipcMain.handle('start', async () => await checkConfigStatus());
+    ipcMain.handle('password-status', () => vault ? true : false);
+    ipcMain.handle('get:trading:terminal:view', async () => getPositionsView());
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();

@@ -88,7 +88,7 @@ export const drainWallets = defineCommand({
     async run({args}) {
        const num = parseFloat(args.fee);
        try {
-           await drainWalletsToMain(args.password, num);
+           await drainWalletsToMain(args.password, undefined, num);
         } catch {
             process.exit(1);
        }
@@ -112,7 +112,7 @@ export const splitFounds = defineCommand({
         const num = parseFloat(args.amount);
         const fees = parseFloat(args.fee);
         try {
-            await distributeGas(args.password, num, fees);
+            await distributeGas(args.password, num, undefined, fees);
         } catch {
             process.exit(1);
        }

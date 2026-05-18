@@ -24,6 +24,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "ui/src/electron/getPositions.ts"],
   "exclude": ["drizzle.config.ts"]
 }

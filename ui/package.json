@@ -41,6 +41,7 @@
   "dependencies": {
     "@nuxt/ui": "^4.7.1",
     "@riavzon/utils": "^1.1.6",
+    "animate.css": "^4.1.1",
     "electron-squirrel-startup": "^1.0.1",
     "tailwindcss": "^4.3.0",
     "vue": "^3.5.34",

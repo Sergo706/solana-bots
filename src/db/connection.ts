@@ -16,9 +16,18 @@ const dataDir =
 
 export const db = drizzle({ connection: { url: `file:${dataDir}/wallets.db`} ,schema });
 
-// const appDir = path.dirname(process.execPath);
-// const migrationsFolder = path.join(appDir, "migrations");
+const appDir = process.env.NODE_ENV === 'development' 
+  ? path.join(process.cwd(), '..') 
+  : path.dirname(process.execPath);
+const migrationsFolder = path.join(appDir, "src/db/migrations");
 
-// void migrate(db, { 
-//   migrationsFolder
-// });
+void migrate(db, { 
+  migrationsFolder
+});
+
+export const migrateForElec = async () => {
+await migrate(db, { 
+  migrationsFolder
+});
+return;
+};

@@ -12,13 +12,18 @@ import Layout from '@/Layout.vue';
           </template>
 
           <template #right>
-            <UButton
-              label="Create API Token"
-              variant="subtle"
-              color="primary"
-              size="sm"
-              trailing-icon="lucide:plus"
-            />
+            <TradeModal
+              btn-size="sm"
+              :btn-color="'success'"
+              :btn-label="'Create Wallets'"
+              :btn-icon="'lucide:plus'" 
+              title="Create Wallets"
+              :msg="'Create newly fresh wallets'"
+            > 
+              <template #contentModal>
+                <CreateWalletsForm />
+              </template>
+            </TradeModal>
           </template>
         </UDashboardNavbar>
       </template>

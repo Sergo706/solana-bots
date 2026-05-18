@@ -6,18 +6,33 @@ import { volumeStart } from "@solana-bots/lib/transactions/volumeBot/volumeStart
 import { runCommand } from "citty";
 import { volumeStop } from "@solana-bots/lib/transactions/volumeBot/volumeStop";
 import { volumeStatus } from "@solana-bots/lib/transactions/volumeBot/volumeStatus";
+import { Keypair } from "@solana/web3.js";
+import type { SerializedWallet } from "@/types/positons";
+import { toKeyPair } from "./utils/toKeypaid";
+
 
 const sell = (getVault: () => string | null) => { 
-      ipcMain.handle('trade:sell', async (_event, targetMintAddress: string, numberOfWallets: number, sellPercentage: number, chunksToProcess: number) => {
+      ipcMain.handle('trade:sell', async (_event, targetMintAddress: string, numberOfWallets: number, sellPercentage: number, chunksToProcess: number, chosenWallets?: SerializedWallet[], targetedPositionsToSell?: number[]) => {
         const vault = getVault();
         if (!vault) {
           return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
-        }
+        } 
         try {
           const decryptedPassword = safeStorage.decryptString(
             Buffer.from(vault, 'base64')
           );
-          const sell = await massSell(targetMintAddress, numberOfWallets, decryptedPassword, sellPercentage, chunksToProcess);
+
+          const chosen: Keypair[] = [];
+
+          if (chosenWallets && chosenWallets.length > 0) {
+            for (const wall of chosenWallets) {
+                chosen.push(toKeyPair(wall));
+            }
+          }
+
+          const sell = await massSell(targetMintAddress, numberOfWallets, decryptedPassword, sellPercentage, chunksToProcess, chosen, targetedPositionsToSell);
+
+          if (!sell.ok) return sell;
           return { ok: true, date: new Date().toISOString(), data: sell };
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
@@ -27,7 +42,7 @@ const sell = (getVault: () => string | null) => {
     };
 
 const buy = (getVault: () => string | null) => { 
-      ipcMain.handle('trade:buy', async (_event, targetMintAddress: string, solAmountsPerWallet: number, numberOfWallets: number, chunksToProcess: number) => {
+      ipcMain.handle('trade:buy', async (_event, targetMintAddress: string, solAmountsPerWallet: number, numberOfWallets: number, chunksToProcess: number, chosenWallets?: SerializedWallet[]) => {
         const vault = getVault();
         if (!vault) {
           return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
@@ -36,8 +51,18 @@ const buy = (getVault: () => string | null) => {
           const decryptedPassword = safeStorage.decryptString(
             Buffer.from(vault, 'base64')
           );
-          const sell = await massBuy(targetMintAddress, solAmountsPerWallet, numberOfWallets, decryptedPassword, chunksToProcess);
-          return { ok: true, date: new Date().toISOString(), data: sell };
+          const chosen: Keypair[] = [];
+
+          if (chosenWallets && chosenWallets.length > 0) {
+            for (const wall of chosenWallets) {
+                chosen.push(toKeyPair(wall));
+            }
+          }
+ 
+          const buy = await massBuy(targetMintAddress, solAmountsPerWallet, numberOfWallets, decryptedPassword, chunksToProcess, chosen);
+          if (!buy.ok) return buy;
+          
+          return { ok: true, date: new Date().toISOString(), data: buy };
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           return { ok: false, date: new Date().toISOString(), reason: message };
@@ -56,6 +81,7 @@ const out = (getVault: () => string | null) => {
             Buffer.from(vault, 'base64')
           );
           const out = await massOutForAllWallets(decryptedPassword);
+          if (!out.ok) return out;
           return { ok: true, date: new Date().toISOString(), data: out };
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);

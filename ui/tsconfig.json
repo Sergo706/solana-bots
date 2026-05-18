@@ -35,6 +35,7 @@
     "src/types/interface.d.ts",
     "auto-imports.d.ts",
     "components.d.ts",
+    "*.d.ts",
     "vite.renderer.config.ts",
     "forge.env.d.ts",
     "forge.config.ts",

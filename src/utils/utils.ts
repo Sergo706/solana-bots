@@ -111,7 +111,7 @@ export const getApiAndRpc = async (password: string) => {
 
    if (!data) {
       consola.error('No api key or rpc found');
-      process.exit(1);
+      throw new Error('No api key or rpc found');
    }
 
    const dec = decryptPrivateKey(data.encryptedApiKey as Buffer, password);

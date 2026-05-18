@@ -5,6 +5,9 @@ import { getEligibleWallets } from "@solana-bots/utils/getWalletsWithSOL";
 import { createWallet, storeMain } from "@solana-bots/lib/createWallet";
 import { drainWalletsToMain } from "@solana-bots/lib/drainWallets";
 import { distributeGas } from "@solana-bots/lib/split";
+import { getAllWallets } from "@solana-bots/utils/getWallets";
+import { getWalletsManagementView } from "./utils/getWalletManagmentView";
+import { updateMainWallet } from "./utils/updateMainWallet";
 
 const getWalletsActions = (getVault: () => string | null) => {
   ipcMain.handle('get:wallets:all', async () => {
@@ -18,6 +21,24 @@ const getWalletsActions = (getVault: () => string | null) => {
       );
       const wallets = await getAllWalletsView(decryptedPassword);
       return { ok: true, date: new Date().toISOString(), data: wallets };
+    } catch {
+      return { ok: false, date: new Date().toISOString(), reason: 'Error getting wallets. Check your password or contact support.' };
+    }
+  });
+};
+
+const getWalletsManagementViewPC = (getVault: () => string | null) => {
+  ipcMain.handle('get:wallets:management', async () => {
+    const vault = getVault();
+    if (!vault) {
+      return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
+    }
+    try {
+      const decryptedPassword = safeStorage.decryptString(
+        Buffer.from(vault, 'base64')
+      );
+      const wallets = await getWalletsManagementView(decryptedPassword);
+      return wallets;
     } catch {
       return { ok: false, date: new Date().toISOString(), reason: 'Error getting wallets. Check your password or contact support.' };
     }
@@ -106,9 +127,33 @@ const storeMainWalletAction = (getVault: () => string | null) => {
   });
 };
 
+const updateMainWalletAction = (getVault: () => string | null) => {
+    ipcMain.handle('update:new:wallet', async (_event, newPrivateKeyWallet: string) => {
+      const vault = getVault();
+      if (!vault) {
+          return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
+      }
+        try {
+          const decryptedPassword = safeStorage.decryptString(
+            Buffer.from(vault, 'base64')
+          );
+          const res = await updateMainWallet(decryptedPassword, newPrivateKeyWallet);
+          return res;
+        } catch {
+          return { ok: false, date: new Date().toISOString(), reason: 'Error updating new main wallet.' };
+        }
+    });
+};
 
 const drainWallets = (getVault: () => string | null) => {
-  ipcMain.handle('drain:wallet', async (_event, fee: number) => {
+  ipcMain.handle('drain:wallet', async (
+    _event, 
+    targetedWallets?: {
+    publicAddress: string;
+    id: number;
+}[],
+fee?: number
+) => {
     const vault = getVault();
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
@@ -119,10 +164,10 @@ const drainWallets = (getVault: () => string | null) => {
         Buffer.from(vault, 'base64')
       );
 
-      const drain = await drainWalletsToMain(decryptedPassword, fee);
+      const drain = await drainWalletsToMain(decryptedPassword, targetedWallets, fee);
       if (!drain.ok) {
             return {
-                ok: true,
+                ok: false,
                 date: new Date().toISOString(),
                 reason: drain.reason ?? 'Error draining wallets'
             };
@@ -136,7 +181,12 @@ const drainWallets = (getVault: () => string | null) => {
 };
 
 const distributeSols = (getVault: () => string | null) => {
-  ipcMain.handle('distribute:wallet', async (_event, amountPerWallet: number, fee: number) => {
+  ipcMain.handle('distribute:wallet', async (
+    _event, 
+    amountPerWallet: number, 
+    targetedWallets?: { publicAddress: string | null }[],
+    fee?: number
+) => {
     const vault = getVault();
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
@@ -147,9 +197,36 @@ const distributeSols = (getVault: () => string | null) => {
         Buffer.from(vault, 'base64')
       );
 
-      const distribute = await distributeGas(decryptedPassword, amountPerWallet, fee);
+      const distribute = await distributeGas(decryptedPassword, amountPerWallet, targetedWallets, fee);
 
       return { ok: true, date: new Date().toISOString(), data: distribute.data };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { ok: false, date: new Date().toISOString(), reason: message };
+    }
+  });
+};
+
+const getAllRawWallets = (getVault: () => string | null) => {
+    ipcMain.handle('get:all:raw:wallets', async () => {
+    const vault = getVault();
+    if (!vault) {
+      return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
+    }
+
+    try {
+      const decryptedPassword = safeStorage.decryptString(
+        Buffer.from(vault, 'base64')
+      );
+
+      const data = await getAllWallets(decryptedPassword);
+      const subKeys = data.subKeys.map((d) => {
+        return {
+          ...d,
+          pubkey: d.pubkey.toBase58()
+        };
+      });
+      return { ok: true, date: new Date().toISOString(), data: { ...data, subKeys } };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { ok: false, date: new Date().toISOString(), reason: message };
@@ -160,11 +237,14 @@ const distributeSols = (getVault: () => string | null) => {
 const actions = [
   getWalletsActions,
   getWalletByPubkeyAction,
+  getWalletsManagementViewPC,
   getWalletsBySolAction,
   createWalletsAction,
   storeMainWalletAction,
+  updateMainWalletAction,
   drainWallets,
-  distributeSols
+  distributeSols,
+  getAllRawWallets
 ];
 
 export default actions;

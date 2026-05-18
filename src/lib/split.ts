@@ -13,7 +13,7 @@ import consola from 'consola';
 import { decryptPrivateKey, getApiAndRpc, sleep } from '../utils/utils.js';
 
 
-export async function distributeGas(password: string, amountPerWallet: number | string, fee = 5000) {
+export async function distributeGas(password: string, amountPerWallet: number | string, targetedWallets?: { publicAddress: string | null; }[], fee = 5000) {
     const { rpc } = await getApiAndRpc(password);
     const connection = new Connection(rpc, "confirmed");
     const parsedAmount = typeof amountPerWallet === 'string' ? parseFloat(amountPerWallet) : amountPerWallet;
@@ -33,9 +33,18 @@ export async function distributeGas(password: string, amountPerWallet: number | 
     const decryptedWallet = decryptPrivateKey(wallet.privateKeyEncrypted as Buffer, password);
     const mainWallet = Keypair.fromSecretKey(decryptedWallet);
 
-    const subWalletAddresses = await db.select({privateKeyEncrypted: walletTable.privateKeyEncrypted, publicAddress: walletTable.publicAddress})
+    let subWalletAddresses: {
+        publicAddress: string | null;
+    }[];
+
+    if (!targetedWallets || targetedWallets.length === 0) {
+        subWalletAddresses = await db.select({privateKeyEncrypted: walletTable.privateKeyEncrypted, publicAddress: walletTable.publicAddress})
                     .from(walletTable)
                     .where(eq(walletTable.isMainWallet, false));
+    } else {
+        subWalletAddresses = targetedWallets;
+    }
+
 
     if (subWalletAddresses.length === 0) {
         consola.error('There is not configured wallets in the database yet. Create a few first.');
@@ -55,8 +64,8 @@ export async function distributeGas(password: string, amountPerWallet: number | 
 
     if (currentBalance < totalRequired) {
         const missing = Number(totalRequired - currentBalance) / LAMPORTS_PER_SOL;
-        consola.error(`Insufficient funds. You need ${missing.toFixed(4)} more SOL in your main wallet.`);
-        throw new Error(`Insufficient funds. You need ${missing.toFixed(4)} more SOL in your main wallet.`);
+        consola.error(`Insufficient funds. You need ${missing.toFixed(5)} more SOL in your main wallet.`);
+        throw new Error(`Insufficient funds. You need ${missing.toFixed(5)} more SOL in your main wallet.`);
     }
 
         const { blockhash } = await connection.getLatestBlockhash();

@@ -47,9 +47,10 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
  
 
      consola.start(`Preparing to buy ${targetMintAddress} across ${String(decrypedWallets.length)} wallets...`);
+     const hasChosenWallets = Array.isArray(chosenWallets) && chosenWallets.length > 0;
 
      let publicKeys;
-     if (chosenWallets) {
+     if (hasChosenWallets) {
         publicKeys = chosenWallets.map(w => w.publicKey);;
      } else {
         publicKeys = decrypedWallets.map(w => w.publicKey);
@@ -57,7 +58,8 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
 
      const accountsInfos = await connection.getMultipleAccountsInfo(publicKeys);
      let walletData;
-     if (chosenWallets) {
+
+     if (hasChosenWallets) {
             walletData = chosenWallets.map((wallet, index) => {
                 const acct = accountsInfos[index];
                 const lamports = acct?.lamports ?? 0;
@@ -77,25 +79,26 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
         data: {
             positionsOpened: 0,
             walletsCount: walletData.length,
-            failedWallets: [{
-                pubkey: '',
-                reason: ''
-            }]
+            failedWallets: [] as { pubkey: string, reason: string }[]
         }
     };
+
+    if (walletData.length === 0) {
+        consola.fail(`'No wallets available to perform the buy operation.'`);
+        throw new Error('No wallets available to perform the buy operation.');
+    }
+
     await chunkProcess(walletData, chunksToProcess, async (chunk) => {
         await Promise.all(
             chunk.map(async ({balance, wallet}) => {
-                await db.transaction(async (tx) => {
+
+                if (balance < (lamportsPerWallet + NETWORK_FEE_BUFFER)) {
+                    consola.warn(`Skipping ${wallet.publicKey.toBase58()}: Insufficient SOL for swap + buy.`);
+                    returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Insufficient SOL for swap + buy. \n balance: ${balance / LAMPORTS_PER_SOL } / needed: ${(Number(lamportsPerWallet  + NETWORK_FEE_BUFFER)) / LAMPORTS_PER_SOL}`});
+                    return; 
+                 }
+
                  try {
-
-                    if (balance < (lamportsPerWallet + NETWORK_FEE_BUFFER)) {
-                        consola.warn(`Skipping ${wallet.publicKey.toBase58()}: Insufficient SOL for swap + buy.`);
-                        returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Insufficient SOL for swap + buy. ${balance} / ${lamportsPerWallet + NETWORK_FEE_BUFFER}`});
-                        tx.rollback();
-                        return; 
-                     }
-
                      consola.info(`Ordering for ${wallet.publicKey.toBase58()} wallet...`);
                      const orderUrl = new URL(`${JUPITER_BASE_URL}/order`);
                      orderUrl.searchParams.append("inputMint", SOL_MINT);
@@ -112,15 +115,13 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                     if (!orderResponse.ok) {
                         consola.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Jupiter api call to /order is failed. ${String(orderResponse.status)}`});
-                        tx.rollback();
                         return;
                     }
 
                     const orderResult = await orderResponse.json() as OrderResponse;
                     if (!orderResult.transaction) {
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: "Order failed to generate transaction"});
-                        tx.rollback();
-                        throw new Error("Order failed to generate transaction");
+                        return;
                     };
 
                     let totalSolRequired = lamportsPerWallet + NETWORK_FEE_BUFFER;
@@ -133,7 +134,6 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                     if (balance < totalSolRequired) {
                         consola.error(`Wallet ${wallet.publicKey.toBase58()} can't afford the Jupiter Platform Fee in SOL.`);
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `can't afford the Jupiter Platform Fee in SOL. ${balance} / ${totalSolRequired}`});
-                        tx.rollback();
                         return;
                     }
                     
@@ -158,15 +158,15 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                     if (!executeResponse.ok) {
                         consola.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Jupiter api call to /execute is failed. ${String(executeResponse.status)}`});
-                        tx.rollback();
                         return;
                     }
+
                     const result = await executeResponse.json() as ExecuteResponse;
                     if (result.status === "Success") {
                             consola.success(`Buy Success! https://solscan.io/tx/${result.signature}`);
                             returnType.data.positionsOpened = returnType.data.positionsOpened + 1;
                         try {
-                            await tx.insert(positionsTable).values({
+                            await db.insert(positionsTable).values({
                                 walletAddress: wallet.publicKey.toBase58(),
                                 targetMintAddress: targetMintAddress,
                                 solAmounts: lamportsPerWallet,
@@ -174,24 +174,35 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                                 tokenAmount: BigInt(result.outputAmountResult),
                             });
                         } catch (err) { 
-                            consola.error("Database Error", err);
+                            consola.error("Database Error (Swap succeeded on-chain, but failed to record)", err);
                         }
                     } else {
-                        tx.rollback();
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `"Swap failed:", ${JSON.stringify(result, null, 2)}`});
                         consola.error("Swap failed:", JSON.stringify(result, null, 2));
                     }
                  } catch (err) {
-                      consola.error(`Critical error for ${wallet.publicKey.toBase58()}:`, err);
+                    const message = err instanceof Error ? err.message : String(err);
+                    consola.error(`Critical error for ${wallet.publicKey.toBase58()}:`, err);
+                    returnType.data.failedWallets.push({
+                        pubkey: wallet.publicKey.toBase58(),
+                        reason: message
+                    });
                  }
-                });
             })
         );
          await sleep(1000);
     });
   consola.success("Mass Buy operation completed.");
-    if (returnType.data.failedWallets.every(d => d.pubkey && d.pubkey !== '')) {
-      returnType.data.failedWallets = [];
+  consola.info(`Positions Closed:`, returnType.data.positionsOpened);
+  consola.info(`Wallets Processed:`, returnType.data.walletsCount);
+  consola.info(`Failed Operations:`, returnType.data.failedWallets.length);
+
+  if (returnType.data.failedWallets.length > 0) {
+    consola.info("Failures:");
+    returnType.data.failedWallets.forEach((fail, i) => {
+      consola.error(`  ${(i + 1)}. ${fail.pubkey}: ${fail.reason}`);
+    });
   }
+  
   return returnType; 
 }
