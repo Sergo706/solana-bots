@@ -1,4 +1,5 @@
 import type { SerializedWallet } from '@/types/positons';
+import type { Activity, LogEntry, Stats, Status } from '@/types/VolumeBots';
 import { contextBridge, ipcRenderer } from 'electron';
 
 
@@ -32,12 +33,50 @@ buy: (targetMintAddress: string, solAmountsPerWallet: number, numberOfWallets: n
         ipcRenderer.invoke('trade:buy', targetMintAddress, solAmountsPerWallet, numberOfWallets, chunksToProcess, chosenWallets),
 out: () =>  ipcRenderer.invoke('trade:out'),
 
-volumeBot: (targetMintAddress: string, maxSolPerWallet: number, numberOfWallets: number, ttl?: number) => 
-            ipcRenderer.invoke('trade:volume-bot', targetMintAddress, maxSolPerWallet, numberOfWallets, ttl),
+volumeBot: (targetMintAddress: string, maxSolPerWallet: number, numberOfWallets: number, interval?: number, shouldMassOut = true, ttl?: number) => 
+            ipcRenderer.invoke('trade:volume-bot', targetMintAddress, maxSolPerWallet, numberOfWallets, interval, shouldMassOut, ttl),
 volumeBotStop: () => ipcRenderer.invoke(`trade:volume-bot:stop`),
 volumeBotStatus: () => ipcRenderer.invoke(`trade:volume-bot:status`),
-getPositions: () => ipcRenderer.invoke('get:positions'),
-getPositionsView: () => ipcRenderer.invoke('get:trading:terminal:view'),
+
+
+onRawConsoleUpdate: (cb: (text: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, value: string) => { cb(value); };
+    ipcRenderer.on('volume-bot:raw-console', listener);
+    return () => ipcRenderer.removeListener('volume-bot:raw-console', listener);
+},
+
+ onVolumeBotLog: (cb: (log: LogEntry) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, log: LogEntry) => { cb(log); };
+    ipcRenderer.on('volume-bot:log', listener);
+    return () => ipcRenderer.removeListener('volume-bot:log', listener);
+  },
+
+  onVolumeBotStats: (cb: (stats: Stats) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, stats: Stats) => { cb(stats); };
+    ipcRenderer.on('volume-bot:stats', listener);
+    return () => ipcRenderer.removeListener('volume-bot:stats', listener);
+  },
+
+  onVolumeBotActivity: (cb: (activity: Activity) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, activity: Activity) => { cb(activity); };
+    ipcRenderer.on('volume-bot:activity', listener);
+    return () => ipcRenderer.removeListener('volume-bot:activity', listener);
+  },
+
+  onVolumeBotStatus: (cb: (status: Status) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, status: Status) => { cb(status); };
+    ipcRenderer.on('volume-bot:status', listener);
+    return () => ipcRenderer.removeListener('volume-bot:status', listener);
+  },
+
+  onVolumeBotReady: (cb: (payload: { pid: number }) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: { pid: number }) => { cb(payload); };
+    ipcRenderer.on('volume-bot:ready', listener);
+    return () => ipcRenderer.removeListener('volume-bot:ready', listener);
+  },
+
+    getPositions: () => ipcRenderer.invoke('get:positions'),
+    getPositionsView: () => ipcRenderer.invoke('get:trading:terminal:view'),
 });
 
 

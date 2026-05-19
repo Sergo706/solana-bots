@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d037e704-00d6-4f94-8e15-4f660ea691b1",
+  "id": "a4eef518-581e-4996-8bc1-8cc63f25eff1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "wallets": {
@@ -44,7 +44,15 @@
           "default": "(cast(unixepoch() as int))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "wallets_public_address_unique": {
+          "name": "wallets_public_address_unique",
+          "columns": [
+            "public_address"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -155,7 +163,7 @@
           "columnsTo": [
             "public_address"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

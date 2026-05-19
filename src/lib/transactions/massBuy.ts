@@ -16,12 +16,13 @@ import { chunkProcess } from '@riavzon/utils';
 
 const NETWORK_FEE_BUFFER = BigInt(0.005 * LAMPORTS_PER_SOL);
 const SOL_MINT = "So11111111111111111111111111111111111111112";
+const log = consola.withTag('[BUY]');
 
 export async function massBuy(targetMintAddress: string, solAmountsPerWallet: number, numberOfWallets: number, password: string, chunksToProcess = 2, chosenWallets?: Keypair[]) {
  const { rpc, rawKey } = await getApiAndRpc(password);
 
  if (rpc.includes('devnet')) {
-    consola.error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
+    log.error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
     throw new Error("Jupiter swaps are not supported on Devnet. Please use a Mainnet RPC for trading.");
 }
 
@@ -36,7 +37,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
  const selectedWallets = allSubWallets.slice(0, numberOfWallets);
 
  if (selectedWallets.length < numberOfWallets) {
-        consola.warn(`Requested ${String(numberOfWallets)} wallets, but only found ${String(selectedWallets.length)} in DB.`);
+        log.warn(`Requested ${String(numberOfWallets)} wallets, but only found ${String(selectedWallets.length)} in DB.`);
  }
 
      const decrypedWallets = selectedWallets.map((sub) => {
@@ -46,7 +47,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
      });
  
 
-     consola.start(`Preparing to buy ${targetMintAddress} across ${String(decrypedWallets.length)} wallets...`);
+     log.start(`Preparing to buy ${targetMintAddress} across ${String(decrypedWallets.length)} wallets...`);
      const hasChosenWallets = Array.isArray(chosenWallets) && chosenWallets.length > 0;
 
      let publicKeys;
@@ -79,12 +80,13 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
         data: {
             positionsOpened: 0,
             walletsCount: walletData.length,
-            failedWallets: [] as { pubkey: string, reason: string }[]
+            failedWallets: [] as { pubkey: string, reason: string }[],
+            walletsSpent: [] as { pubkey: string, spent: number, received: number }[]
         }
     };
 
     if (walletData.length === 0) {
-        consola.fail(`'No wallets available to perform the buy operation.'`);
+        log.fail(`'No wallets available to perform the buy operation.'`);
         throw new Error('No wallets available to perform the buy operation.');
     }
 
@@ -93,13 +95,13 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
             chunk.map(async ({balance, wallet}) => {
 
                 if (balance < (lamportsPerWallet + NETWORK_FEE_BUFFER)) {
-                    consola.warn(`Skipping ${wallet.publicKey.toBase58()}: Insufficient SOL for swap + buy.`);
+                    log.warn(`Skipping ${wallet.publicKey.toBase58()}: Insufficient SOL for swap + buy.`);
                     returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Insufficient SOL for swap + buy. \n balance: ${balance / LAMPORTS_PER_SOL } / needed: ${(Number(lamportsPerWallet  + NETWORK_FEE_BUFFER)) / LAMPORTS_PER_SOL}`});
                     return; 
                  }
 
                  try {
-                     consola.info(`Ordering for ${wallet.publicKey.toBase58()} wallet...`);
+                     log.info(`Ordering for ${wallet.publicKey.toBase58()} wallet...`);
                      const orderUrl = new URL(`${JUPITER_BASE_URL}/order`);
                      orderUrl.searchParams.append("inputMint", SOL_MINT);
                      orderUrl.searchParams.append("outputMint", targetMintAddress);
@@ -113,7 +115,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                     });
 
                     if (!orderResponse.ok) {
-                        consola.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
+                        log.error(`/order failed: ${String(orderResponse.status)}`, await orderResponse.text());
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Jupiter api call to /order is failed. ${String(orderResponse.status)}`});
                         return;
                     }
@@ -132,7 +134,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                     }
 
                     if (balance < totalSolRequired) {
-                        consola.error(`Wallet ${wallet.publicKey.toBase58()} can't afford the Jupiter Platform Fee in SOL.`);
+                        log.error(`Wallet ${wallet.publicKey.toBase58()} can't afford the Jupiter Platform Fee in SOL.`);
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `can't afford the Jupiter Platform Fee in SOL. ${balance} / ${totalSolRequired}`});
                         return;
                     }
@@ -141,7 +143,7 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                         Buffer.from(orderResult.transaction, "base64"),
                     );
                     transaction.sign([wallet]);
-                    consola.info(`Chosen router: ${orderResult.router}`);
+                    log.info(`Chosen router: ${orderResult.router}`);
 
                     const executeResponse = await fetchWithRetry(`${JUPITER_BASE_URL}/execute`, 5, 500, {
                         method: "POST",
@@ -156,15 +158,20 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                     });
 
                     if (!executeResponse.ok) {
-                        consola.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
+                        log.error(`/execute failed: ${String(executeResponse.status)}`, await executeResponse.text());
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `Jupiter api call to /execute is failed. ${String(executeResponse.status)}`});
                         return;
                     }
 
                     const result = await executeResponse.json() as ExecuteResponse;
                     if (result.status === "Success") {
-                            consola.success(`Buy Success! https://solscan.io/tx/${result.signature}`);
+                            log.success(`Buy Success! https://solscan.io/tx/${result.signature}`);
                             returnType.data.positionsOpened = returnType.data.positionsOpened + 1;
+                            returnType.data.walletsSpent.push({
+                                pubkey: wallet.publicKey.toBase58(),
+                                spent: Number(lamportsPerWallet) / LAMPORTS_PER_SOL,
+                                received: Number(result.outputAmountResult)
+                            });
                         try {
                             await db.insert(positionsTable).values({
                                 walletAddress: wallet.publicKey.toBase58(),
@@ -174,15 +181,15 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
                                 tokenAmount: BigInt(result.outputAmountResult),
                             });
                         } catch (err) { 
-                            consola.error("Database Error (Swap succeeded on-chain, but failed to record)", err);
+                            log.error("Database Error (Swap succeeded on-chain, but failed to record)", err);
                         }
                     } else {
                         returnType.data.failedWallets.push({pubkey: wallet.publicKey.toBase58(), reason: `"Swap failed:", ${JSON.stringify(result, null, 2)}`});
-                        consola.error("Swap failed:", JSON.stringify(result, null, 2));
+                        log.error("Swap failed:", JSON.stringify(result, null, 2));
                     }
                  } catch (err) {
                     const message = err instanceof Error ? err.message : String(err);
-                    consola.error(`Critical error for ${wallet.publicKey.toBase58()}:`, err);
+                    log.error(`Critical error for ${wallet.publicKey.toBase58()}:`, err);
                     returnType.data.failedWallets.push({
                         pubkey: wallet.publicKey.toBase58(),
                         reason: message
@@ -192,15 +199,15 @@ export async function massBuy(targetMintAddress: string, solAmountsPerWallet: nu
         );
          await sleep(1000);
     });
-  consola.success("Mass Buy operation completed.");
-  consola.info(`Positions Closed:`, returnType.data.positionsOpened);
-  consola.info(`Wallets Processed:`, returnType.data.walletsCount);
-  consola.info(`Failed Operations:`, returnType.data.failedWallets.length);
+  log.success("Mass Buy operation completed.");
+  log.info(`Positions Opened:`, returnType.data.positionsOpened);
+  log.info(`Wallets Processed:`, returnType.data.walletsCount);
+  log.info(`Failed Operations:`, returnType.data.failedWallets.length);
 
   if (returnType.data.failedWallets.length > 0) {
-    consola.info("Failures:");
+    log.info("Failures:");
     returnType.data.failedWallets.forEach((fail, i) => {
-      consola.error(`  ${(i + 1)}. ${fail.pubkey}: ${fail.reason}`);
+      log.error(`  ${(i + 1)}. ${fail.pubkey}: ${fail.reason}`);
     });
   }
   

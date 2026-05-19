@@ -16,6 +16,18 @@ export const dtFmt = computed(() => {
   });
 });
 
+export const dtFmtWithSeconds = computed(() => {
+  return new Intl.DateTimeFormat(locale.value, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+});
+
 export function formatDate(value: Date | string | number | null | undefined) {
   if (!value) return '—';
 

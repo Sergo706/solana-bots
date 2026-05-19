@@ -10,9 +10,11 @@ import { getOpenPositions } from './getPositions';
 import { checkConfigStatus } from './checkOnBoarding';
 import { migrateForElec } from '@solana-bots/db/connection';
 import { getPositionsView } from './utils/getTerminalView';
+import { setupVolumeBotBridge } from './utils/volumeBotIPC';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let vault: string | null = null;
+let mainWindow: BrowserWindow | null = null;
 
 if (started) {
   vault = null;
@@ -20,7 +22,7 @@ if (started) {
 }
 
 const createWindow = () => {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -51,13 +53,19 @@ session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     );
   }
 
-  // Open the DevTools.
+
   mainWindow.webContents.openDevTools();
 };
 app.disableHardwareAcceleration();
 
-void app.whenReady().then(() => { 
-  void migrateForElec();
+void app.whenReady().then(async () => { 
+  try {
+    console.log("Starting database migrations...");
+    await migrateForElec();
+    console.log("Migrations complete!"); 
+  } catch (err) {
+    console.error("Failed to run migrations on startup:", err);
+  }
   createWindow();
 
   ipcMain.handle('save-password', (_event, password: string) => {
@@ -100,9 +108,12 @@ void app.whenReady().then(() => {
     ipcMain.handle('start', async () => await checkConfigStatus());
     ipcMain.handle('password-status', () => vault ? true : false);
     ipcMain.handle('get:trading:terminal:view', async () => getPositionsView());
+    if (mainWindow) setupVolumeBotBridge(mainWindow, () => vault);
+  
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
+            if (mainWindow) setupVolumeBotBridge(mainWindow, () => vault);
         }
     });
 

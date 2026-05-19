@@ -20,6 +20,8 @@ if (process.env['SOLANA_BOTS_INTERNAL'] === 'volume-worker') {
       Number(process.env['AMOUNT']),
       Number(process.env['WALLETS']),
       process.env['PASSWORD']!,
+      Number(process.env['INTERVAL']),
+      (process.env['MASS_OUT'] === 'true' ? true : false),
       process.env['TTL'] ? Number(process.env['TTL']) : undefined,
     );
   } catch (err) {

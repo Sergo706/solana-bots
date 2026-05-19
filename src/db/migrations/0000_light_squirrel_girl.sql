@@ -6,6 +6,7 @@ CREATE TABLE `wallets` (
 	`created_at` integer DEFAULT (cast(unixepoch() as int)) NOT NULL
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `wallets_public_address_unique` ON `wallets` (`public_address`);--> statement-breakpoint
 CREATE TABLE `api_rpc` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch() as int)) NOT NULL,
@@ -21,5 +22,5 @@ CREATE TABLE `positions` (
 	`token_amount` numeric,
 	`wallet_remaining_balance` numeric,
 	`updated_at` integer DEFAULT (cast(unixepoch() as int)),
-	FOREIGN KEY (`wallet_address`) REFERENCES `wallets`(`public_address`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`wallet_address`) REFERENCES `wallets`(`public_address`) ON UPDATE no action ON DELETE cascade
 );

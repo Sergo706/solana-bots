@@ -31,16 +31,25 @@ const openLoadingModal = ref(false);
 const fundOpen = ref(false);
 const activeWallet = ref<WalletsManagementTable | WalletsManagementTable[] | null>(null);
 
-const { dontShowAgainWarning, execute } = useDrainFunds();
 
 defineProps<{
   data?: WalletsManagementTable[]
 }>();
 
+const singleTargetWallet = ref<string[]>([]);
+const { 
+  execute: executeIndividualDrain, 
+  getAll: preloadDrainData 
+} = useDrainFunds({
+  selectedSpecific: ref(true),
+  selectedWallets: singleTargetWallet
+});
+const { dontShowAgainWarning, execute } = useDrainFunds();
 
 const locale = ref('en-US');
-onMounted(() => {
+onMounted(async () => {
   locale.value = navigator.language;
+  await preloadDrainData();
 });
 
 const sorting = ref<SortingItem[]>([
@@ -175,17 +184,9 @@ function getRowItems(position: WalletsManagementTable) {
       async onSelect() {
         openLoadingModal.value = true;
         try {
-          const wallet = position.publickey;
-          const { success, execute, loadingForm, walletsLoading } = useDrainFunds({
-            selectedSpecific: ref(true),
-            selectedWallets: ref([wallet])
-          });
-
-            await execute();
-            if (success.value) {
-                openLoadingModal.value = loadingForm.value || walletsLoading.value;
-            }
-            return;
+          singleTargetWallet.value = [position.publickey];
+          
+          await executeIndividualDrain();
         } finally {
           openLoadingModal.value = false;
         }

@@ -27,6 +27,11 @@ export async function drainWalletsToMain(password: string, targetedWallets?: {pu
     const filters: SQL[] = [eq(walletTable.isMainWallet, false)];
     const destPublicKey = new PublicKey(mainWalletData.publicAddress);
 
+    if (targetedWallets?.length === 0) {
+        consola.warn('Specific drain requested, but target array resolved empty. Aborting to protect funds.');
+        return { ok: false, date: new Date().toISOString(), reason: 'No matching specific wallets were found to drain.' };
+    }
+
     if (targetedWallets && targetedWallets.length > 0) {
         const ids = targetedWallets.map((id) => id.id);
         const pubkeys = targetedWallets.map((id) => id.publicAddress);

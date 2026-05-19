@@ -45,6 +45,12 @@ export const volumeStart = defineCommand({
       description: "Master password used to decrypt your stored wallets.",
       valueHint: "mySecurePassword"
     },
+    interval: {
+      type: "string",
+      required: false,
+      description: "Run a cycle every this much time (ms)",
+      valueHint: "1000 for every 1s (default)"
+    },
     ttl: {
       type: "string",
       required: false,
@@ -73,6 +79,7 @@ export const volumeStart = defineCommand({
                 WALLETS: args.wallets,
                 AMOUNT: args.amount,
                 PASSWORD: args.password,
+                INTERVAL: args.interval,
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 TTL: args.ttl ?? "",
             },
