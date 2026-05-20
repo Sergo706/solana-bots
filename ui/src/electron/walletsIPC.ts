@@ -1,13 +1,7 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
-import { getAllWalletsView, getByPubkey } from "@solana-bots/lib/reads";
 import { ipcMain, safeStorage } from "electron";
-import { getEligibleWallets } from "@solana-bots/utils/getWalletsWithSOL";
-import { createWallet, storeMain } from "@solana-bots/lib/createWallet";
-import { drainWalletsToMain } from "@solana-bots/lib/drainWallets";
-import { distributeGas } from "@solana-bots/lib/split";
-import { getAllWallets } from "@solana-bots/utils/getWallets";
-import { getWalletsManagementView } from "./utils/getWalletManagmentView";
-import { updateMainWallet } from "./utils/updateMainWallet";
+import type { GetWallets, WalletsManagementTable } from "@/types/GetWallets";
+import { routeOps } from "./utils/spawnOpWorker";
 
 const getWalletsActions = (getVault: () => string | null) => {
   ipcMain.handle('get:wallets:all', async () => {
@@ -19,9 +13,11 @@ const getWalletsActions = (getVault: () => string | null) => {
       const decryptedPassword = safeStorage.decryptString(
         Buffer.from(vault, 'base64')
       );
-      const wallets = await getAllWalletsView(decryptedPassword);
-      return { ok: true, date: new Date().toISOString(), data: wallets };
-    } catch {
+
+      const wallets = await routeOps<GetWallets>('get:wallets:all', decryptedPassword);
+      return wallets;
+    } catch (err) {
+      console.error('IPC Handler Caught Error:', err);
       return { ok: false, date: new Date().toISOString(), reason: 'Error getting wallets. Check your password or contact support.' };
     }
   });
@@ -37,7 +33,8 @@ const getWalletsManagementViewPC = (getVault: () => string | null) => {
       const decryptedPassword = safeStorage.decryptString(
         Buffer.from(vault, 'base64')
       );
-      const wallets = await getWalletsManagementView(decryptedPassword);
+
+      const wallets = await routeOps<WalletsManagementTable[]>('get:wallets:management', decryptedPassword);
       return wallets;
     } catch {
       return { ok: false, date: new Date().toISOString(), reason: 'Error getting wallets. Check your password or contact support.' };
@@ -56,8 +53,8 @@ const getWalletByPubkeyAction = (getVault: () => string | null) => {
         Buffer.from(vault, 'base64')
       );
 
-      const wallet = await getByPubkey(decryptedPassword, id);
-      return { ok: true, date: new Date().toISOString(), data: wallet };
+      const wallet = await routeOps('get:wallets:one', decryptedPassword, [id]);
+      return wallet;
     } catch {
       return { ok: false, date: new Date().toISOString(), reason: 'Error getting wallet. Check your password or contact support.' };
     }
@@ -70,14 +67,13 @@ const getWalletsBySolAction = (getVault: () => string | null) => {
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
     }
-
     try {
       const decryptedPassword = safeStorage.decryptString(
         Buffer.from(vault, 'base64')
       );
 
-      const wallets = await getEligibleWallets(decryptedPassword, reqSol);
-      return { ok: true, date: new Date().toISOString(), data: wallets };
+      const wallets = await routeOps('get:wallets:bySol', decryptedPassword, [reqSol]);
+      return wallets;
     } catch {
       return { ok: false, date: new Date().toISOString(), reason: 'Error getting wallets. No wallets with this amount of SOL' };
     }
@@ -90,17 +86,13 @@ const createWalletsAction = (getVault: () => string | null) => {
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
     }
-
     try {
       const decryptedPassword = safeStorage.decryptString(
         Buffer.from(vault, 'base64')
       );
 
-      for (let i = 0; i < count; i++) {
-        await createWallet(decryptedPassword);
-      }
-
-      return { ok: true, date: new Date().toISOString(), data: `Successfully created ${count} wallets` };
+      const res = await routeOps<string>('create:wallet', decryptedPassword, [count]);
+      return res;
     } catch {
       return { ok: false, date: new Date().toISOString(), reason: 'Error creating wallets.' };
     }
@@ -113,14 +105,13 @@ const storeMainWalletAction = (getVault: () => string | null) => {
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
     }
-
     try {
       const decryptedPassword = safeStorage.decryptString(
         Buffer.from(vault, 'base64')
       );
 
-      await storeMain(decryptedPassword, path);
-      return { ok: true, date: new Date().toISOString(), data: `Successfully stored main wallet!` };
+      const res = await routeOps<string>('store:main:wallet', decryptedPassword, [path]);
+      return res;
     } catch {
       return { ok: false, date: new Date().toISOString(), reason: 'Invalid secret key format. Ensure it is a JSON array of numbers, a base58 string, base64, or hex. And that the path is valid' };
     }
@@ -128,51 +119,41 @@ const storeMainWalletAction = (getVault: () => string | null) => {
 };
 
 const updateMainWalletAction = (getVault: () => string | null) => {
-    ipcMain.handle('update:new:wallet', async (_event, newPrivateKeyWallet: string) => {
-      const vault = getVault();
-      if (!vault) {
-          return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
-      }
-        try {
-          const decryptedPassword = safeStorage.decryptString(
-            Buffer.from(vault, 'base64')
-          );
-          const res = await updateMainWallet(decryptedPassword, newPrivateKeyWallet);
-          return res;
-        } catch {
-          return { ok: false, date: new Date().toISOString(), reason: 'Error updating new main wallet.' };
-        }
-    });
-};
-
-const drainWallets = (getVault: () => string | null) => {
-  ipcMain.handle('drain:wallet', async (
-    _event, 
-    targetedWallets?: {
-    publicAddress: string;
-    id: number;
-}[],
-fee?: number
-) => {
+  ipcMain.handle('update:new:wallet', async (_event, newPrivateKeyWallet: string) => {
     const vault = getVault();
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
     }
-
     try {
       const decryptedPassword = safeStorage.decryptString(
         Buffer.from(vault, 'base64')
       );
 
-      const drain = await drainWalletsToMain(decryptedPassword, targetedWallets, fee);
-      if (!drain.ok) {
-            return {
-                ok: false,
-                date: new Date().toISOString(),
-                reason: drain.reason ?? 'Error draining wallets'
-            };
-      }
-      return { ok: true, date: new Date().toISOString(), data: `Successfully drained wallets to main wallet!` };
+      const res = await routeOps<string>('update:new:wallet', decryptedPassword, [newPrivateKeyWallet]);
+      return res;
+    } catch {
+      return { ok: false, date: new Date().toISOString(), reason: 'Error updating new main wallet.' };
+    }
+  });
+};
+
+const drainWallets = (getVault: () => string | null) => {
+  ipcMain.handle('drain:wallet', async (
+    _event, 
+    targetedWallets?: { publicAddress: string; id: number; }[],
+    fee?: number
+  ) => {
+    const vault = getVault();
+    if (!vault) {
+      return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
+    }
+    try {
+      const decryptedPassword = safeStorage.decryptString(
+        Buffer.from(vault, 'base64')
+      );
+
+      const drain = await routeOps('drain:wallet', decryptedPassword, [targetedWallets, fee]);
+      return drain;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       return { ok: false, date: new Date().toISOString(), reason: message };
@@ -186,20 +167,18 @@ const distributeSols = (getVault: () => string | null) => {
     amountPerWallet: number, 
     targetedWallets?: { publicAddress: string | null }[],
     fee?: number
-) => {
+  ) => {
     const vault = getVault();
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
     }
-
     try {
       const decryptedPassword = safeStorage.decryptString(
         Buffer.from(vault, 'base64')
       );
 
-      const distribute = await distributeGas(decryptedPassword, amountPerWallet, targetedWallets, fee);
-
-      return { ok: true, date: new Date().toISOString(), data: distribute.data };
+      const distribute = await routeOps('distribute:wallet', decryptedPassword, [amountPerWallet, targetedWallets, fee]);
+      return distribute;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { ok: false, date: new Date().toISOString(), reason: message };
@@ -208,25 +187,18 @@ const distributeSols = (getVault: () => string | null) => {
 };
 
 const getAllRawWallets = (getVault: () => string | null) => {
-    ipcMain.handle('get:all:raw:wallets', async () => {
+  ipcMain.handle('get:all:raw:wallets', async () => {
     const vault = getVault();
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
     }
-
     try {
       const decryptedPassword = safeStorage.decryptString(
         Buffer.from(vault, 'base64')
       );
 
-      const data = await getAllWallets(decryptedPassword);
-      const subKeys = data.subKeys.map((d) => {
-        return {
-          ...d,
-          pubkey: d.pubkey.toBase58()
-        };
-      });
-      return { ok: true, date: new Date().toISOString(), data: { ...data, subKeys } };
+      const data = await routeOps('get:all:raw:wallets', decryptedPassword);
+      return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { ok: false, date: new Date().toISOString(), reason: message };

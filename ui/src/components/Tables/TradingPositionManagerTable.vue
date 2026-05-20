@@ -32,6 +32,7 @@ const quote = ref();
 const openLoadingModal = ref(false);
 
 
+const emit = defineEmits<(e: 'submitted') => void>();
 
 defineProps<{
   data?: Positions[]
@@ -199,6 +200,7 @@ function getRowItems(position: Positions) {
           await execSell();
           if (success.value && successResponse.value) {
             await successModal(successResponse.value);
+            emit('submitted');
           }
         } finally {
           openLoadingModal.value = false;
@@ -296,6 +298,7 @@ try {
       }
 
       await successModal(finalSummary);
+      emit('submitted');
     }
   } finally {
        openLoadingModal.value = false;
@@ -319,7 +322,9 @@ try {
         :msg="'Start new positions'"
       > 
         <template #contentModal>
-          <BuyForm />
+          <BuyForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -332,7 +337,9 @@ try {
         :msg="'Start mass sell'"
       > 
         <template #contentModal>
-          <SellForm />
+          <SellForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -346,7 +353,9 @@ try {
         :msg="'Close all open positions your sub wallets haves'"
       > 
         <template #contentModal>
-          <MassOutButton />
+          <MassOutButton 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -468,7 +477,9 @@ try {
         :msg="'Start new positions'"
       > 
         <template #contentModal>
-          <BuyForm />
+          <BuyForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 

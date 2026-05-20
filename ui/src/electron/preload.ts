@@ -80,7 +80,6 @@ onRawConsoleUpdate: (cb: (text: string) => void) => {
 });
 
 
-// ai
-
-// rug assessment
+// ai maybe later
+// rug assessment maybe later
 

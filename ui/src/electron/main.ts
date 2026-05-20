@@ -6,11 +6,10 @@ import { fileURLToPath } from 'node:url';
 import walletActions from './walletsIPC';
 import { rpcAndAPI } from '@solana-bots/utils/utils';
 import tradingActions from './tradingIPC';
-import { getOpenPositions } from './getPositions';
 import { checkConfigStatus } from './checkOnBoarding';
 import { migrateForElec } from '@solana-bots/db/connection';
-import { getPositionsView } from './utils/getTerminalView';
 import { setupVolumeBotBridge } from './utils/volumeBotIPC';
+import { routeOps, spawnDbProcess } from './utils/spawnOpWorker';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let vault: string | null = null;
@@ -63,6 +62,7 @@ void app.whenReady().then(async () => {
     console.log("Starting database migrations...");
     await migrateForElec();
     console.log("Migrations complete!"); 
+    spawnDbProcess();
   } catch (err) {
     console.error("Failed to run migrations on startup:", err);
   }
@@ -84,6 +84,7 @@ void app.whenReady().then(async () => {
         return { ok: false, date: new Date().toISOString(), reason: 'ENCRYPTION_FAILED' };
      }
 });
+
   ipcMain.handle('api:rpc:save', async (_event, api: string, rpc: string) => {
     if (!vault) {
       return { ok: false, date: new Date().toISOString(), reason: 'UNAUTHORIZED' };
@@ -102,13 +103,13 @@ void app.whenReady().then(async () => {
      }
 });
 
-    walletActions.forEach((action) => { action(() => vault); });
-    tradingActions.forEach((action) => { action(() => vault); });
-    ipcMain.handle('get:positions', async () => await getOpenPositions());
-    ipcMain.handle('start', async () => await checkConfigStatus());
     ipcMain.handle('password-status', () => vault ? true : false);
-    ipcMain.handle('get:trading:terminal:view', async () => getPositionsView());
     if (mainWindow) setupVolumeBotBridge(mainWindow, () => vault);
+    walletActions.forEach((action) => { action(() => vault); });
+    ipcMain.handle('start', async () => await checkConfigStatus());
+    ipcMain.handle('get:positions', async () =>  await routeOps('get:positions'));
+    ipcMain.handle('get:trading:terminal:view', async () => await routeOps('get:trading:terminal:view'));
+    tradingActions.forEach((action) => { action(() => vault); });
   
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {

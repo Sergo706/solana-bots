@@ -1,11 +1,11 @@
 import { getAllWallets } from "../utils/getWallets.js";
 import consola from "consola";
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, type AccountInfo } from "@solana/web3.js";
 import { db } from "../db/connection.js";
 import { walletTable } from "../db/index.js";
 import { eq } from "drizzle-orm";
 import { decryptPrivateKey, getApiAndRpc, sleep } from "../utils/utils.js";
-
+import { chunkProcess } from "@riavzon/utils";
 
 export async function getAllWalletsView(password: string) {
     const { rpc } = await getApiAndRpc(password);
@@ -31,9 +31,15 @@ export async function getAllWalletsView(password: string) {
     console.log(`Found ${String(keys.subKeys.length)} sub-wallets in DB.`);
 
     const publicKeys = keys.subKeys.map(w => w.pubkey);
-    const accountsInfo = await connection.getMultipleAccountsInfo(publicKeys);
+    const accountsInfo: (AccountInfo<Buffer> | null)[] = [];
+    
+    await chunkProcess(publicKeys, 90, async (chunkOfKeys) => {
+        const chunkResults = await connection.getMultipleAccountsInfo(chunkOfKeys);
+        accountsInfo.push(...chunkResults);
+        await sleep(200); 
+    });
 
-        const walletData = keys.subKeys.map((wallet, index) => {
+    const walletData = keys.subKeys.map((wallet, index) => {
             const acct = accountsInfo[index];
             const lamports = acct?.lamports ?? 0;
         return {

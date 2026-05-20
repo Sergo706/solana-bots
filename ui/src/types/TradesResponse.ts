@@ -1,32 +1,31 @@
 export interface BuyResponse {
-    ok: boolean;
-    date: string;
-    data: {
         positionsOpened: number;
         walletsCount: number;
         failedWallets: {
             pubkey: string;
             reason: string;
         }[];
-    };
+        walletsSpent: {
+            pubkey: string;
+            spent: number;
+            received: number;
+        }[];
 }
 
 export interface SellResponseOne {
-    ok: boolean;
-    date: string;
-    data: {
         positionsClosed: number;
         walletsCount: number;
         failedWallets: {
             pubkey: string;
             reason: string;
         }[];
-    };
-}
-export interface SellResponseTwo {
-    ok: boolean
-    date: string
-    data: string
+         walletsSpent: {
+            pubkey: string;
+            spent: number;
+            received: number;
+        }[];
 }
 
-export type SellResponseMain = SellResponseOne | SellResponseTwo
+
+
+export type SellResponseMain = SellResponseOne

@@ -9,7 +9,7 @@ export function useCreateWallets(initialCount = 1) {
   const loadingForm = ref(false);
 
   const toast = useToast();
-  const smartPepe = new URL('../../assets/public/smartpepe.jpg', import.meta.url).href;
+  const smartPepe = new URL('../assets/public/smartpepe.jpg', import.meta.url).href;
   const smartQuote = useRandomQuote();
 
   const create = async () => {

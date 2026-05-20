@@ -5,7 +5,7 @@ import ui from '@nuxt/ui/vue-plugin';
 import App from '../App.vue';
 import { createRouter, createWebHashHistory } from 'vue-router';
 import HomeView from '@/views/HomeView.vue';
-import AIView from '@/views/AIView.vue';
+// import AIView from '@/views/AIView.vue';
 import SettingsView from '@/views/SettingsView.vue';
 import VolumeBotView from '@/views/VolumeBotView.vue';
 import TradeView from '@/views/TradeView.vue';
@@ -20,7 +20,7 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', component: HomeView },
-    { path: '/ai', component: AIView },
+    // { path: '/ai', component: AIView }, // maybe later maybe not
     { path: '/trade', component: TradeView },
     { path: '/trade/manager', component: TradeView },
     { path: '/wallets', component: WalleltsView },

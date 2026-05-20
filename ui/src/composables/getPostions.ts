@@ -22,7 +22,7 @@ export function useGetPostions() {
                 return;
             }
             
-            const positions = res.data as Positions[];
+            const positions = res.data;
             data.value = positions;
             return positions;
         } catch (err) {

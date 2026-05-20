@@ -2,10 +2,16 @@
 import { computed } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
 import type { BuyResponse, SellResponseMain } from '@/types/TradesResponse';
+import { dtFmtWithSeconds } from '@/utils/date';
 
 interface FailedWallet {
   pubkey: string
   reason: string
+}
+interface WalletsSpent   { 
+  pubkey: string;
+  spent: number;
+  received: number 
 }
 
 type Summary =
@@ -22,6 +28,7 @@ type Summary =
       walletsCount: number
       positionsCount: number
       failedWallets: FailedWallet[]
+      walletsSpent: WalletsSpent []
     }
 
 const props = defineProps<{
@@ -39,36 +46,53 @@ const columns: TableColumn<FailedWallet>[] = [
     header: 'Reason'
   }
 ];
+const columnsForSpents: TableColumn<WalletsSpent>[] = [
+  {
+    accessorKey: 'pubkey',
+    header: 'Wallet'
+  },
+  {
+    accessorKey: 'spent',
+    header: 'Amount Spent'
+  },
+  {
+    accessorKey: 'received',
+    header: 'Tokens received'
+  }
+];
 
 const summary = computed<Summary | null>(() => {
+
   if (props.buy) {
     return {
       mode: 'stats',
       title: 'Buy completed',
-      date: props.buy.date,
-      walletsCount: props.buy.data.walletsCount,
-      positionsCount: props.buy.data.positionsOpened,
-      failedWallets: props.buy.data.failedWallets
+      date: dtFmtWithSeconds.value.format(new Date()),
+      walletsCount: props.buy.walletsCount,
+      positionsCount: props.buy.positionsOpened,
+      failedWallets: props.buy.failedWallets,
+      walletsSpent: props.buy.walletsSpent
     };
   }
 
   if (props.sell) {
-    if (typeof props.sell.data === 'string') {
+    if (typeof props.sell === 'string') {
       return {
         mode: 'message',
         title: 'Sell completed',
-        date: props.sell.date,
-        message: props.sell.data
+        date: dtFmtWithSeconds.value.format(new Date()),
+        message: props.sell
       };
     }
 
     return {
       mode: 'stats',
       title: 'Sell completed',
-      date: props.sell.date,
-      walletsCount: props.sell.data.walletsCount,
-      positionsCount: props.sell.data.positionsClosed,
-      failedWallets: props.sell.data.failedWallets
+      date: dtFmtWithSeconds.value.format(new Date()),
+      walletsCount: props.sell.walletsCount,
+      positionsCount: props.sell.positionsClosed,
+      failedWallets: props.sell.failedWallets,
+      walletsSpent: props.sell.walletsSpent
     };
   }
 
@@ -142,12 +166,32 @@ const summary = computed<Summary | null>(() => {
           :columns="columns"
         />
       </UCard>
-
       <div
         v-else
-        class="text-sm text-muted-foreground"
+        class="text-sm text-muted-foreground italic px-1"
       >
         No failed wallets.
+      </div>
+
+      <USeparator />
+
+      <UCard v-if="summary.walletsSpent.length">
+        <template #header>
+          <div class="font-medium">
+            Spends
+          </div>
+        </template>
+
+        <UTable
+          :data="summary.walletsSpent"
+          :columns="columnsForSpents"
+        />
+      </UCard>
+      <div
+        v-else
+        class="text-sm text-muted-foreground italic px-1"
+      >
+        No transactions recorded.
       </div>
     </div>
   </UCard>

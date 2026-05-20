@@ -1,5 +1,6 @@
+<!-- eslint-disable @typescript-eslint/no-unnecessary-condition -->
 <script setup lang="ts">
-import { computed, h, onMounted, ref, resolveComponent, toRef, useTemplateRef } from 'vue';
+import { computed, h, onMounted, ref, resolveComponent, useTemplateRef } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
 import { upperFirst } from 'scule';
 import type { TradingTerminalData, UTableRef , Agg } from '@/types/TradingTerminal';
@@ -14,12 +15,12 @@ import SellForm from '../Forms/SellForm.vue';
 import { useMassOut } from '@/composables/useOutAll';
 import MassOutButton from '../Forms/MassOutButton.vue';
 import { useMassSell } from '@/composables/useSell';
-import type { MaybeRef } from '@/utils/useOrCreateRef';
 import LoadingModal from '../Modals/LoadingModal.vue';
 import type { SellResponseMain } from '@/types/TradesResponse';
 import { successModal } from '@/utils/tables/successModalSum';
 import { formatDate } from '@/utils/date';
 import { getSortableHeader } from '@/utils/tables/sortableHeader';
+import type { ResultsWithId } from '@/types/OperationWorker';
 
 const UButton = resolveComponent('UButton');
 const UBadge = resolveComponent('UBadge');
@@ -30,7 +31,22 @@ const { execute, dontShowAgainWarning } = useMassOut();
 const quote = ref();
 const openLoadingModal = ref(false);
 
+const { 
+  loadingForm,
+  loading,
+  execute: execSell,
+  successResponse,
+  success,
+  successRawResponse,
+  targetMintAddress,
+  targetedPositionsToSell,
+  selectedSpecific,
+  selectedWallets,
+  numberOfWallets,
+  
+} = useMassSell();
 
+const emit = defineEmits<(e: 'submitted') => void>();
 
 defineProps<{
   data?: TradingTerminalData[]
@@ -226,24 +242,28 @@ function getRowItems(position: TradingTerminalData) {
         const wallets = position.wallets.map((a) =>  a.publickey);
         try {
 
-          const { loadingForm, loading, execute: execSell, successResponse, success } = useMassSell({
-            targetMintAddress: toRef(position.mint), 
-            numberOfWallets: toRef(position.walletsIn),
-            selectedSpecific: toRef(true),
-            selectedWallets: toRef(wallets),
-            targetedPositionsToSell: [position.id] as unknown as MaybeRef<number[]>
-          });
+            targetMintAddress.value = position.mint;
+            numberOfWallets.value = position.walletsIn;
+            selectedSpecific.value = true;
+            selectedWallets.value = wallets;
+            targetedPositionsToSell.value = position.positionIds;
   
           await execSell();
           if (success.value) {
             openLoadingModal.value = loadingForm.value || loading.value;
             if (successResponse.value) {
               await successModal(successResponse.value);
+              emit('submitted');
             }
           }
           return ;
         } finally {
             openLoadingModal.value = false;
+            targetMintAddress.value = '';
+            numberOfWallets.value = 0;
+            selectedSpecific.value = false;
+            selectedWallets.value = [];
+            targetedPositionsToSell.value = [];
         }
       }
     }
@@ -293,71 +313,69 @@ const selectedPositions = computed(() => {
 async function closeSelected() {
 
   const positions = selectedPositions.value.map((position) => ({ ...position }));
-  const publicKeys = positions.flatMap((p) => (p.wallets).map((w) => w.publickey));
-  const positionsId = positions.map((pos) => pos.id);
   const targetMints = [...new Set(positions.map((pos) => pos.mint))];
 
-  const results: SellResponseMain[] = [];
+  const results: ResultsWithId<SellResponseMain>[] = [];
   openLoadingModal.value = true;
 
 try {
     for (const mint of targetMints) {
-      const { execute: execSell, successResponse, success } = useMassSell({
-        targetMintAddress: ref(mint),
-        numberOfWallets: ref(publicKeys.length),
-        selectedSpecific: ref(true),
-        selectedWallets: ref(publicKeys),
-        targetedPositionsToSell: positionsId as unknown as MaybeRef<number[]>
-      });
+      const positionsForThisMint = positions.filter((p) => p.mint === mint);
+      const keysForThisMint = positionsForThisMint.flatMap((p) => p.wallets.map((w) => w.publickey));
+      const idsForThisMint = positionsForThisMint.flatMap((pos) => pos.positionIds);
+
+      targetMintAddress.value = mint;
+      numberOfWallets.value = keysForThisMint.length;
+      selectedSpecific.value = true;
+      selectedWallets.value = keysForThisMint;
+      targetedPositionsToSell.value = idsForThisMint;
       
       await execSell();
       
-      if (success.value && successResponse.value) {
-          results.push(successResponse.value);
+      if (success.value && successRawResponse.value) {
+          results.push(successRawResponse.value);
       }
     }
 
     if (results.length > 0) {
 
       const aggregated = results.reduce<Agg>(
-        (acc, r) => {
-          if (typeof r.data === 'string') {
-            acc.messages.push(r.data);
-            if (!r.ok) acc.ok = false;
-          } else {
-            acc.positionsClosed += r.data.positionsClosed;
-            acc.walletsCount += r.data.walletsCount;
-            acc.failedWallets.push(...(r.data.failedWallets));
-            if (!r.ok) acc.ok = false;
-          }
-          return acc;
-        },
-        { ok: true, positionsClosed: 0, walletsCount: 0, failedWallets: [], messages: [] }
-      );
+          (acc, r) => {
 
-      let finalSummary: SellResponseMain;
-      if (aggregated.messages.length > 0 && aggregated.positionsClosed === 0 && aggregated.walletsCount === 0 && aggregated.failedWallets.length === 0) {
-        finalSummary = {
-          ok: aggregated.ok,
-          date: new Date().toISOString(),
-          data: aggregated.messages.join('; ')
-        };
-      } else {
-        finalSummary = {
-          ok: aggregated.ok,
-          date: new Date().toISOString(),
-          data: {
-            positionsClosed: aggregated.positionsClosed,
-            walletsCount: aggregated.walletsCount,
-            failedWallets: aggregated.failedWallets
+            if (r.ok && r.data) {
+              acc.positionsClosed += r.data.positionsClosed;
+              acc.walletsCount += r.data.walletsCount;
+              acc.failedWallets.push(...r.data.failedWallets);
+              acc.walletsSpent.push(...r.data.walletsSpent);
+              
+            }
+            return acc;
+          },
+          { 
+            positionsClosed: 0, 
+            walletsCount: 0, 
+            failedWallets: [], 
+            walletsSpent: []
           }
-        };
-      }
+        );
+
+      const finalSummary: SellResponseMain = {
+          positionsClosed: aggregated.positionsClosed,
+          walletsCount: aggregated.walletsCount,
+          failedWallets: aggregated.failedWallets,
+          walletsSpent: aggregated.walletsSpent
+      };
 
       await successModal(finalSummary);
+      emit('submitted');
     }
   } finally {
        openLoadingModal.value = false;
+       targetMintAddress.value = '';
+       numberOfWallets.value = 0;
+       selectedSpecific.value = false;
+       selectedWallets.value = [];
+       targetedPositionsToSell.value = [];
   }
 }
 
@@ -378,7 +396,9 @@ try {
         :msg="'Start new positions'"
       > 
         <template #contentModal>
-          <BuyForm />
+          <BuyForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -391,7 +411,9 @@ try {
         :msg="'Start mass sell'"
       > 
         <template #contentModal>
-          <SellForm />
+          <SellForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -405,7 +427,9 @@ try {
         :msg="'Close all open positions your sub wallets haves'"
       > 
         <template #contentModal>
-          <MassOutButton />
+          <MassOutButton 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -600,7 +624,9 @@ try {
         :msg="'Start new positions'"
       > 
         <template #contentModal>
-          <BuyForm />
+          <BuyForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 

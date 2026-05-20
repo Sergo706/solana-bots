@@ -12,7 +12,7 @@ const retry = async () => {
 };
 
 onMounted(async () => {
-    await getAll();
+    if (!data.value) await getAll();
 });
 
 </script>
@@ -36,7 +36,9 @@ onMounted(async () => {
               :msg="'Start new positions'"
             > 
               <template #contentModal>
-                <BuyForm />
+                <BuyForm 
+                  @submitted="retry"
+                />
               </template>
             </TradeModal>
           </template>
@@ -82,6 +84,7 @@ onMounted(async () => {
         <WalletsManagementTable
           v-if="!loading && (!error || error === 'NDATA')"
           :data="data ?? []"
+          @submitted="retry"
         />
       </template>
     </UDashboardPanel>

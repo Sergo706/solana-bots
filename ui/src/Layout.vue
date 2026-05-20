@@ -25,11 +25,11 @@ const links: NavigationMenuItem[][] = [
       icon: 'i-lucide-bar-chart-2',
       to: '/trade/manager',
     },
-    {
-      label: 'AI Research',
-      icon: 'i-lucide-cpu',
-      to: '/ai',
-    },
+    // {
+    //   label: 'AI Research',
+    //   icon: 'i-lucide-cpu', // maybe later maybe not
+    //   to: '/ai',
+    // },
     {
       label: 'Volume Bot',
       icon: 'i-lucide-activity',

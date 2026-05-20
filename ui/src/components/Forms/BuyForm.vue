@@ -94,7 +94,7 @@ const onSubmit = async () => {
         }
         const filtered = specificWallets.length > 0 ? specificWallets : undefined;
         const api = await window.tradesApi.buy(state.target, state.solAmountsPerWallet, state.numberOfWallets, undefined, filtered);
-        console.log(api);
+
         if (api.ok) {
           emit('submitted');
           toast.add({

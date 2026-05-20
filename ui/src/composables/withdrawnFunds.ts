@@ -18,7 +18,7 @@ export function useDrainFunds(options: UseDrainFundsOptions = {}) {
   const dontShowAgainWarning = useStorage('dont-show-warning-wallets', false, localStorage, {mergeDefaults: true});
 
   const toast = useToast();
-  const smartPepe = new URL('../../assets/public/smartpepe.jpg', import.meta.url).href;
+  const smartPepe = new URL('../assets/public/smartpepe.jpg', import.meta.url).href;
   const smartQuote = useRandomQuote();
 
   const { error: walletsError, data: walletsData, getAll, loading: walletsLoading } = useRawWallets();

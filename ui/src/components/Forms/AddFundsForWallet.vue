@@ -13,7 +13,7 @@ const model = defineModel<boolean>({
   default: false
 });
 
-
+const emit = defineEmits<(e: 'submitted') => void>();
 const selectedWallets = computed(() => {
   if (props.wallet && !Array.isArray(props.wallet)) return [props.wallet.publickey];
   const mapped = props.wallet?.map(a => a.publickey) ?? [];
@@ -38,6 +38,7 @@ async function confirmAddFunds() {
   }
   try {
     await execute();
+    emit('submitted');
   } finally {
       model.value = false;
   }

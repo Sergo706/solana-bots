@@ -20,7 +20,7 @@ export default defineConfig([
      format: ['esm'],
    },
     {
-     entry: 'ui/src/electron/utils/worker.ts',
+     entry: ['ui/src/electron/utils/worker.ts', 'ui/src/electron/utils/OperationWorker.ts'],
      outDir: 'ui/dist-worker',
      format: ['esm'],
      target: ['node20', "esnext"],

@@ -18,7 +18,7 @@ export function useDistributeFunds(options: UseDistributeFundsOptions = {}) {
   const selectedWallets = useOrCreateRef(options.selectedWallets, []);
 
   const toast = useToast();
-  const smartPepe = new URL('../../assets/public/smartpepe.jpg', import.meta.url).href;
+  const smartPepe = new URL('../assets/public/smartpepe.jpg', import.meta.url).href;
   const smartQuote = useRandomQuote();
 
 

@@ -11,5 +11,5 @@ export interface Positions {
 
 export interface SerializedWallet {
   publicKey: string
-  secretKey: Uint8Array
+  secretKey: Uint8Array | number[]
 }

@@ -30,16 +30,24 @@ const openLoadingModal = ref(false);
 
 const fundOpen = ref(false);
 const activeWallet = ref<WalletsManagementTable | WalletsManagementTable[] | null>(null);
+const emit = defineEmits<(e: 'submitted') => void>();
 
 
-defineProps<{
+const props = defineProps<{
   data?: WalletsManagementTable[]
 }>();
 
+
+// @ts-expect-error empty state
+const isEmpty = ref(('reason' in props.data && props.data.reason === 'NDATA') || props.data?.length === 0);
 const singleTargetWallet = ref<string[]>([]);
+
 const { 
   execute: executeIndividualDrain, 
-  getAll: preloadDrainData 
+  getAll: preloadDrainData,
+  loadingForm,
+  success,
+  walletsLoading
 } = useDrainFunds({
   selectedSpecific: ref(true),
   selectedWallets: singleTargetWallet
@@ -187,6 +195,8 @@ function getRowItems(position: WalletsManagementTable) {
           singleTargetWallet.value = [position.publickey];
           
           await executeIndividualDrain();
+          singleTargetWallet.value = [];
+          emit('submitted');
         } finally {
           openLoadingModal.value = false;
         }
@@ -198,7 +208,6 @@ function getRowItems(position: WalletsManagementTable) {
 
 
 const table = useTemplateRef<UTableRefWallet>('table');
-
 
 
 const selectedPositions = computed(() => {
@@ -230,15 +239,14 @@ async function drainBulkFunds() {
   const pubkeys = selectedPositions.value.map(k => k.publickey);
   openLoadingModal.value = true;
 
-  const {execute, success, loadingForm, walletsLoading} = useDrainFunds({
-    selectedSpecific: ref(true),
-    selectedWallets: ref(pubkeys),
-  });
+  singleTargetWallet.value = pubkeys;
 
   try {
-      await execute();
+      await executeIndividualDrain();
       if (success.value) {
           openLoadingModal.value = loadingForm.value || walletsLoading.value;
+          singleTargetWallet.value = [];
+          emit('submitted');
       }
       return;
   } finally {
@@ -256,6 +264,7 @@ async function drainBulkFunds() {
     <AddFundsForWallet
       v-model="fundOpen"
       :wallet="activeWallet"
+      @submitted="$emit('submitted')"
     />
     <div class="flex items-center gap-2">
       <TradeModal
@@ -267,7 +276,9 @@ async function drainBulkFunds() {
         :msg="'Create newly fresh wallets'"
       > 
         <template #contentModal>
-          <CreateWalletsForm />
+          <CreateWalletsForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -280,7 +291,9 @@ async function drainBulkFunds() {
         :msg="'Distribute Funds for your wallets'"
       > 
         <template #contentModal>
-          <DistributeFundsForm />
+          <DistributeFundsForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -293,7 +306,9 @@ async function drainBulkFunds() {
         :msg="'Withdrawn Funds from your wallet(s)'"
       > 
         <template #contentModal>
-          <DrainFundsForm />
+          <DrainFundsForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -307,7 +322,9 @@ async function drainBulkFunds() {
         :msg="'DRAIN ALL Funds to your main wallet'"
       > 
         <template #contentModal>
-          <FastDrain />
+          <FastDrain 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -419,24 +436,26 @@ async function drainBulkFunds() {
   />
 
   <UEmpty 
-    v-if="(!data || data.length === 0)"
+    v-if="isEmpty"
     class="flex-1 min-h-[550px] grid place-content-center text-center"
     icon="i-lucide-key-round"
-    title="No positions yet" 
-    description="Click buy to get started or click Pepe to get a motivation quote from him."
+    title="No wallets yet" 
+    description="You haven't created any wallets yet. Create some to start managing your funds."
     :ui="{root: 'ring-0'}"
   > 
     <template #actions>
       <TradeModal
         btn-size="md"
         :btn-color="'success'"
-        :btn-label="'Buy'"
-        :btn-icon="'i-lucide-shopping-cart'" 
-        title="Buy"
-        :msg="'Start new positions'"
+        :btn-label="'Create Wallets'"
+        :btn-icon="'i-lucide-plus'"
+        title="Create Wallets"
+        :msg="'Create newly fresh wallets'"
       > 
         <template #contentModal>
-          <BuyForm />
+          <CreateWalletsForm 
+            @submitted="$emit('submitted')"
+          />
         </template>
       </TradeModal>
 
@@ -452,7 +471,7 @@ async function drainBulkFunds() {
     </template>
   </UEmpty>
   <div
-    v-if="quote && (!data || data.length === 0)"
+    v-if="quote && isEmpty"
     class="text-center mb-10"
   >
     <p class="italic text-muted opacity-80 leading-relaxed">

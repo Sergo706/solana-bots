@@ -1,9 +1,10 @@
-import { computed, ref } from 'vue';
+import { computed, ref, toRaw } from 'vue';
 import { useRawWallets } from '@/composables/getAllRawWallets';
 import type { SerializedWallet } from '@/types/positons';
 import type { SellResponseMain } from '@/types/TradesResponse';
 import { useRandomQuote } from './randomQuetes';
 import { useOrCreateRef, type MaybeRef } from '@/utils/useOrCreateRef';
+import type { ResultsWithId } from '@/types/OperationWorker';
 
 
 interface UseMassSellOptions {
@@ -29,7 +30,7 @@ export function useMassSell(options: UseMassSellOptions = {}) {
   
   const targetedPositionsToSell = useOrCreateRef(options.targetedPositionsToSell, []);
   const toast = useToast();
-  const smartPepe = new URL('../../assets/public/smartpepe.jpg', import.meta.url).href;
+  const smartPepe = new URL('../assets/public/smartpepe.jpg', import.meta.url).href;
   const smartQuote = useRandomQuote();
 
   const { error, data, getAll, loading } = useRawWallets();
@@ -57,13 +58,13 @@ export function useMassSell(options: UseMassSellOptions = {}) {
 
       output.push({
         publicKey: String(current.pubkey),
-        secretKey: current.decryptedPrivate
+        secretKey: Array.from(current.decryptedPrivate)
       });
     }
 
     return output;
   });
-  
+
   function validate() {
     const errors: { name: string; message: string }[] = [];
 
@@ -89,13 +90,18 @@ export function useMassSell(options: UseMassSellOptions = {}) {
   const loadingForm = ref(false);
   const success = ref(false);
   const successResponse = ref<SellResponseMain | null>(null);
+  const successRawResponse = ref<ResultsWithId<SellResponseMain> | null>(null);
+
 
   async function submit() {
     loadingForm.value = true;
 
     try {
+      if (!data.value?.subKeys) {
+         await getAll();
+      }
       const chosen = selectedSpecific.value && selectedSerializedWallets.value.length > 0
-        ? selectedSerializedWallets.value
+        ? toRaw(selectedSerializedWallets.value)
         : undefined;
 
       const api = await window.tradesApi.sell(
@@ -103,13 +109,14 @@ export function useMassSell(options: UseMassSellOptions = {}) {
         numberOfWallets.value,
         sellPercentage.value,
         chunksToProcess.value,
-        chosen,
-        targetedPositionsToSell.value.length > 0 ? targetedPositionsToSell.value : undefined
+        toRaw(chosen),
+        targetedPositionsToSell.value.length > 0 ? toRaw(targetedPositionsToSell.value) : undefined
       );
 
       if (api.ok) {
         success.value = true;
         successResponse.value = api.data;
+        successRawResponse.value = api;
       }
 
       return api;
@@ -151,6 +158,8 @@ const execute = async () => {
   function resetResult() {
     success.value = false;
     successResponse.value = null;
+    successRawResponse.value = null;
+
   }
 
   return {
@@ -178,6 +187,7 @@ const execute = async () => {
 
     loadingForm,
     success,
-    successResponse
+    successResponse,
+    successRawResponse
   };
 }

@@ -2,7 +2,10 @@ import type { Results } from "@riavzon/utils";
 import type { GetRawWallets, GetWallets, Wallet, WalletsWithSOL } from '@/types/GetWallets';
 import type { BuyResponse, SellResponseMain } from "./TradesResponse";
 import type { SerializedWallet } from "./positons";
-import type { LogEntry, Activity, Stats, Status } from '@/types/VolumeBots';
+import type { LogEntry, Activity, Stats, Status,  } from '@/types/VolumeBots';
+import type { Positions } from "./positons";
+import type { TradingTerminalData } from "./TradingTerminal";
+import type { ResultsWithId } from "./OperationWorker";
 
 export interface PasswordAPI {
   savePassword: (password: string) => Promise<Results<string>>
@@ -29,9 +32,9 @@ export interface WalletsAPI {
 }
 
 export interface TradingAPI {
-sell: (targetMintAddress: string, numberOfWallets: number, sellPercentage = 0, chunksToProcess = 1, chosenWallets?: SerializedWallet[], targetedPositionsToSell?: number[]) => Promise<Results<SellResponseMain>>
-buy: (targetMintAddress: string, solAmountsPerWallet: number, numberOfWallets: number, chunksToProcess = 1, chosenWallets?: SerializedWallet[]) => Promise<Results<BuyResponse>>
-out: () => Promise<Results<SellResponseMain>>
+sell: (targetMintAddress: string, numberOfWallets: number, sellPercentage = 0, chunksToProcess = 1, chosenWallets?: SerializedWallet[], targetedPositionsToSell?: number[]) => Promise<ResultsWithId<SellResponseMain>>
+buy: (targetMintAddress: string, solAmountsPerWallet: number, numberOfWallets: number, chunksToProcess = 1, chosenWallets?: SerializedWallet[]) => Promise<ResultsWithId<BuyResponse>>
+out: () => Promise<ResultsWithId<SellResponseMain>>
 
 volumeBot: (targetMintAddress: string, maxSolPerWallet: number, numberOfWallets: number, interval?: number, shouldMassOut: boolean, ttl?: number) => Promise<Results<string>>
 volumeBotStop: () => Promise<Results<string>>
@@ -43,9 +46,6 @@ onVolumeBotStats: (cb: (stats: Stats) => void) => () => void;
 onVolumeBotActivity: (cb: (activity: Activity) => void) => () => void;
 onVolumeBotStatus: (cb: (status: Status) => void) => () => void;
 onVolumeBotReady: (cb: (payload: { pid: number }) => void) => () => void;
-
-onVolumeBotStatusEvent: (cb: (event: VolumeBotStatusEvent) => void) => () => void;
-onVolumeBotStopped: (cb: (payload: {code: number | null; signal: NodeJS.Signals | null;}) => void) => () => void;
 
 getPositions: () => Promise<Results<Positions[]>>    
 getPositionsView: () => Promise<Results<TradingTerminalData[]>>

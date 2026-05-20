@@ -57,7 +57,9 @@ const items: NavigationMenuItem[][] = [
               :msg="'Create newly fresh wallets'"
             > 
               <template #contentModal>
-                <CreateWalletsForm />
+                <CreateWalletsForm 
+                  @submitted="retry"
+                />
               </template>
             </TradeModal>
           </template>

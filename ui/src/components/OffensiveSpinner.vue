@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { useRandomQuote } from '@/composables/randomQuetes';
+import { ref } from 'vue';
 
-const quete = useRandomQuote();
+const quete = ref(useRandomQuote());
+
+setInterval(() => {
+ quete.value = useRandomQuote();
+}, 8000);
 
 </script>
 
@@ -20,15 +25,40 @@ const quete = useRandomQuote();
             Loading
           </h2>
         </div>
-        <p class="text-neutral-500 text-xs glow-text">
-          {{ quete }}
-        </p>
+        <Transition
+          :duration="{
+            enter: 50,
+            leave: 60
+          }"
+          name="fade"
+          mode="out-in"
+        >
+          <p
+            :key="quete"
+            class="text-neutral-500 text-xs glow-text"
+          >
+            {{ quete }}
+          </p>
+        </Transition>
       </div>
     </template>
   </UPageCard>
 </template>
 
 <style scoped>
+
+.fade-enter-active {
+  transition: opacity 50ms ease-out;
+}
+.fade-leave-active {
+  transition: opacity 100ms ease-in;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -37,7 +67,6 @@ const quete = useRandomQuote();
 }
 
 .glow-text {
-  color: #fff;
   animation: text-glow 2s ease-in-out infinite;
 }
 

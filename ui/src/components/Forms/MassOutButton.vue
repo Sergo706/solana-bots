@@ -43,7 +43,10 @@ const {
     </div>
 
     <OffensiveSpinner v-else-if="loadingForm && !success" />
-    <div class="w-full mb-10">
+    <div
+      v-if="!loadingForm && !success"
+      class="w-full mb-10"
+    >
       <UCheckbox
         v-model="dontShowAgainWarning"
         :default-value="false"

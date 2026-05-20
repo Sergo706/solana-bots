@@ -18,8 +18,8 @@ const retry = async () => {
 };
 
 onMounted(async () => {
-    await getAllWallets();
-    await getAllPostions();
+    if(!wallets.value) await getAllWallets();
+    if (!positions.value || positions.value.length === 0) await getAllPostions();
 });
 
 const totalSubWallets = computed(() => wallets.value?.subs?.length ?? 0);
@@ -53,7 +53,9 @@ const totalSolInSubs = computed(() => (
               :msg="'Create newly fresh wallets'"
             > 
               <template #contentModal>
-                <CreateWalletsForm />
+                <CreateWalletsForm 
+                  @submitted="retry"
+                />
               </template>
             </TradeModal>
           </template>
@@ -156,7 +158,7 @@ const totalSolInSubs = computed(() => (
 
         <div class="flex flex-col gap-10 pb-4">
           <UEmpty 
-            v-if="(!walletsError && !postionsError && !walletsLoading && !postionsLoading) && (!wallets && !positions)"
+            v-if="!walletsLoading && !postionsLoading && (!wallets || !wallets.subs?.length) && (!positions || !positions.length)"
             class="flex-1 min-h-[550px] grid place-content-center text-center"
             icon="i-lucide-wallet"
             title="No Wallets or open positions yet" 

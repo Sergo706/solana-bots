@@ -16,7 +16,7 @@ export function useMassOut() {
   const success = ref(false);
   const successResponse = ref<SellResponseMain | null>(null);
   const dontShowAgainWarning = useStorage('dont-show-warning', false, localStorage, {mergeDefaults: true});
-  const smartPepe = new URL('../../assets/public/smartpepe.jpg', import.meta.url).href;
+  const smartPepe = new URL('../assets/public/smartpepe.jpg', import.meta.url).href;
   const smartQuote = useRandomQuote();
   const toast = useToast();
 

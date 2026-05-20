@@ -22,7 +22,7 @@ export function useVolumeBots(options: UseVolumeBotsOptions = {}) {
 
 
     const toast = useToast();
-    const smartPepe = new URL('../../assets/public/smartpepe.jpg', import.meta.url).href;
+    const smartPepe = new URL('../assets/public/smartpepe.jpg', import.meta.url).href;
     const smartQuote = useRandomQuote();
 
   function validate() {

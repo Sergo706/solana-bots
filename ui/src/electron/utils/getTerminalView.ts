@@ -28,9 +28,9 @@ export async function getPositionsView(): Promise<Results<TradingTerminalData[]>
                 };
           }
 
-          const grouped = data.reduce<Record<number, TradingTerminalData>>((acc, curr) => {
-            const id = curr.positionId;
-            acc[id] ??= {
+          const grouped = data.reduce<Record<string, TradingTerminalData>>((acc, curr) => {
+            const mint = curr.targetMintAddress;
+            acc[mint] ??= {
                     id: curr.positionId,
                     mint: curr.targetMintAddress,
                     walletsIn: 0,
@@ -38,15 +38,19 @@ export async function getPositionsView(): Promise<Results<TradingTerminalData[]>
                     wallets: [],
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     positionOpenedAt: curr.updatedAt!,
+                    positionIds: [],
                 };
-            acc[id].walletsIn++;
-            acc[id].totalSolIn = Number(acc[id].totalSolIn) + Number(curr.solAmounts ?? 0);
-            acc[id].wallets.push({
-                id: curr.walletId,
-                created_at: curr.createdAt,
-                publickey: String(curr.publicAddress),
-                balanceOfSOL: Number(curr.walletRemainingBalance),
-            });
+            acc[mint].walletsIn++;
+            const solAmount = Number(curr.solAmounts ?? 0) / 1_000_000_000;
+            acc[mint].totalSolIn = Number(acc[mint].totalSolIn) + solAmount;
+            acc[mint].positionIds.push(curr.positionId);
+
+            acc[mint].wallets.push({
+                    id: curr.walletId,
+                    created_at: curr.createdAt,
+                    publickey: String(curr.publicAddress),
+                    balanceOfSOL: Number(curr.walletRemainingBalance),
+                });
             return acc;
           }, {});
 

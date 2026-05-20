@@ -11,7 +11,7 @@ import { walletTable } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import consola from 'consola';
 import { decryptPrivateKey, getApiAndRpc, sleep } from '../utils/utils.js';
-
+import { chunkProcess } from '@riavzon/utils';
 
 export async function distributeGas(password: string, amountPerWallet: number | string, targetedWallets?: { publicAddress: string | null; }[], fee = 5000) {
     const { rpc } = await getApiAndRpc(password);
@@ -68,44 +68,64 @@ export async function distributeGas(password: string, amountPerWallet: number | 
         throw new Error(`Insufficient funds. You need ${missing.toFixed(5)} more SOL in your main wallet.`);
     }
 
-        const { blockhash } = await connection.getLatestBlockhash();
-        const distributionPromises = subWalletAddresses.map(async (sub) => {
-            const transaction = new Transaction().add(
-                SystemProgram.transfer({
-                    fromPubkey: mainWallet.publicKey,
-                    toPubkey: new PublicKey(String(sub.publicAddress)), 
-                    lamports: Number(amountInLamports),
-                })
-            );
-
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = mainWallet.publicKey;
-            transaction.sign(mainWallet);
-            return connection.sendRawTransaction(transaction.serialize());
-
-        });
+        let currentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        let blockhashTimestamp = Date.now();
+        const BLOCKHASH_LIFETIME_MS = 45000;
+        const signatures: string[] = [];
+        consola.start(`Distributing gas to ${String(subWalletAddresses.length)} wallets...`);
+    
+        await chunkProcess(subWalletAddresses, 5, async (walletChunk) => {
+            if (Date.now() - blockhashTimestamp > BLOCKHASH_LIFETIME_MS) {
+                try {
+                    currentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+                    blockhashTimestamp = Date.now();
+                    consola.info('Refreshed blockhash to prevent expiration.');
+                } catch (err) {
+                    consola.warn('Failed to refresh blockhash, attempting to proceed with the old one...', err);
+                }
+            }
             
-    const signatures = await Promise.all(distributionPromises.map(async (pros) => {
-            try {
-                await(pros);
-                await sleep(Math.random() * 700);
-            } catch {}
-    }));
+            const chunkSigs = await Promise.all(walletChunk.map(async (sub) => {
+                if (!sub.publicAddress) return null;
 
-    consola.success(`Sent ${String(signatures.length)} transactions!`);
-    consola.info(`Last Sig: ${signatures[signatures.length - 1] ?? 'No signature'}`);
+                try {
+                    const transaction = new Transaction().add(
+                        SystemProgram.transfer({
+                            fromPubkey: mainWallet.publicKey,
+                            toPubkey: new PublicKey(sub.publicAddress), 
+                            lamports: Number(amountInLamports),
+                        })
+                    );
 
-    consola.success(`Successfully distributed founds across wallets`);
-    return {
-        ok: true,
-        date: new Date().toISOString(),
-        data: {
-            sent: `Sent ${String(signatures.length)} transactions`,
-            lastSignature: `Last Sig: ${signatures[signatures.length - 1] ?? 'No signature'}`
-        }
-    };
+                    transaction.recentBlockhash = currentBlockhash;
+                    transaction.feePayer = mainWallet.publicKey;
+                    transaction.sign(mainWallet);
+                    return await connection.sendRawTransaction(transaction.serialize());
+                } catch (err) {
+                    consola.error(`One transfer failed`, err);
+                    return null;
+                }
+            }));
+            
+            for (const sig of chunkSigs) if (sig !== null) signatures.push(sig);
+            await sleep(500 + Math.random() * 500);
+        });
+
+        consola.success(`Sent ${String(signatures.length)} transactions!`);
+        consola.info(`Last Sig: ${signatures[signatures.length - 1] ?? 'No signature'}`);
+        consola.success(`Successfully distributed funds across wallets`);
+        
+        return {
+            ok: true,
+            date: new Date().toISOString(),
+            data: {
+                sent: `Sent ${String(signatures.length)} transactions`,
+                lastSignature: `Last Sig: ${signatures[signatures.length - 1] ?? 'No signature'}`
+            }
+        };
+
     } catch (err) {
-        consola.error(`Error distributing founds`, err);
-        throw new Error(`Error distributing founds`);
+        consola.error(`Error distributing funds`, err);
+        throw new Error(`Error distributing funds`);
     }
 }

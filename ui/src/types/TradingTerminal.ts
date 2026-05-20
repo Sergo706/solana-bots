@@ -3,11 +3,10 @@ import type { Positions } from "./positons";
 import type { Table } from '@tanstack/vue-table';
 
 export interface Agg {
-  ok: boolean;
   positionsClosed: number;
   walletsCount: number;
   failedWallets: { pubkey: string; reason: string }[];
-  messages: string[];
+  walletsSpent: { pubkey: string; spent: number; received: number }[];
 }
 
 export interface TradingTerminalData {
@@ -17,6 +16,7 @@ export interface TradingTerminalData {
     totalSolIn: number | bigint;
     wallets: Wallet[]
     positionOpenedAt: Date; // get all wallets  to sell of this specific wallets in this specific position. 
+    positionIds: number[];
 }
 
 export interface ManageTrades { // make sell of this specific wallet or this specific position

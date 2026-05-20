@@ -87,7 +87,7 @@ watch(filteredLogs, async () => {
           <div class="w-3 h-3 rounded-full bg-green-500/80" />
         </div>
         <span class="ml-2 text-xs font-mono text-zinc-400">volume-bot-logs.log</span>
-        <!-- DYNAMIC LOG TOGGLE BUTTON -->
+    
         <UButton
           :label="isRawMode ? 'STDOUT (RAW)' : 'PARSED LOGS'"
           :icon="isRawMode ? 'i-lucide-terminal' : 'i-lucide-layers'"

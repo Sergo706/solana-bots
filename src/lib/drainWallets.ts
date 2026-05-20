@@ -3,14 +3,15 @@ import {
   Keypair, 
   SystemProgram, 
   Transaction, 
-  PublicKey
+  PublicKey,
+  type AccountInfo
 } from '@solana/web3.js';
 import { db } from '../db/connection.js';
 import { walletTable } from '../db/index.js';
 import { eq, inArray, SQL, and } from 'drizzle-orm';
 import consola from 'consola';
 import { decryptPrivateKey, getApiAndRpc, sleep } from '../utils/utils.js';
-
+import { chunkProcess } from '@riavzon/utils';
 
 
 export async function drainWalletsToMain(password: string, targetedWallets?: {publicAddress: string, id: number}[], fee = 5000) {
@@ -56,58 +57,69 @@ export async function drainWalletsToMain(password: string, targetedWallets?: {pu
     });
 
     const publicKeys = subWalletDecrypted.map(w => w.publicKey);
-    const accountsInfo = await connection.getMultipleAccountsInfo(publicKeys);
+    const accountsInfo: (AccountInfo<Buffer> | null)[] = [];
+    await chunkProcess(publicKeys, 90, async (chunkOfKeys) => {
+        const chunkResults = await connection.getMultipleAccountsInfo(chunkOfKeys);
+        accountsInfo.push(...chunkResults);
+        await sleep(200);
+    });
 
+  try {
+      let currentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      let blockhashTimestamp = Date.now();
+      const BLOCKHASH_LIFETIME_MS = 45000;
+      consola.start(`Draining wallets...`);
+      let successCount = 0;
 
-    const { blockhash } = await connection.getLatestBlockhash();
-    const txPromises: Promise<string>[] = [];
+      const walletsWithInfo = subWalletDecrypted.map((wallet, i) => ({ wallet, info: accountsInfo[i] }));  
 
-    for (let i = 0; i < subWalletDecrypted.length; i++) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const subWallet = subWalletDecrypted[i]!;
-        const info = accountsInfo[i];
-
-        if (!info || info.lamports === 0) continue;
-        const amountToDrain = info.lamports - fee;
-
-        if (amountToDrain <= 0) {
-            consola.info(`Skipping ${String(subWallet.publicKey)}: Insufficient balance for fee.`);
-            continue;
-        }
-
-        const transaction = new Transaction().add(
-            SystemProgram.transfer({
-                fromPubkey: new PublicKey(subWallet.publicKey),
-                toPubkey: new PublicKey(destPublicKey),
-                lamports: amountToDrain,
-            })
-        );
-
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = subWallet.publicKey;
-        transaction.sign(subWallet);
-
-        txPromises.push(connection.sendRawTransaction(transaction.serialize()));
-    }
-
-    if (txPromises.length === 0) {
-        consola.info('No wallets had enough funds to drain.');
-        return { ok: false, date: new Date().toISOString(), reason: 'No wallets had enough funds to drain.'};
-    }
-
-   try {
-        consola.start(`Draining ${String(txPromises.length)} wallets...`);
-        const signatures = await Promise.all(txPromises.map(async (chunk) => {
-            try {
-                await(chunk);
-                await sleep(Math.random() * 700);
-            } catch (err) {
-                 consola.error(`One or more wallets failed to drain. run read-all`, err);
+      await chunkProcess(walletsWithInfo, 5, async (chunk) => { 
+            if (Date.now() - blockhashTimestamp > BLOCKHASH_LIFETIME_MS) {
+                try {
+                    currentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+                    blockhashTimestamp = Date.now();
+                    consola.info('Refreshed blockhash to prevent expiration.');
+                } catch (err) {
+                    consola.warn('Failed to refresh blockhash, attempting to proceed with the old one...', err);
+                }
             }
-        }));
-        consola.success(`Successfully drained ${String(signatures.length)} wallets.`);
-        return { ok: true, date: new Date().toISOString(), data: `Successfully drained ${String(signatures.length)} wallets.`};
-    } catch (err) {
+
+            await Promise.all(chunk.map(async ({ wallet, info }) => {
+                if (!info || info.lamports === 0) return;
+                const amountToDrain = info.lamports - fee;
+
+                if (amountToDrain <= 0) {
+                    consola.info(`Skipping ${String(wallet.publicKey)}: Insufficient balance for fee.`);
+                    return;
+                 }
+
+                try {
+                    const transaction = new Transaction().add(
+                    SystemProgram.transfer({
+                        fromPubkey: new PublicKey(wallet.publicKey),
+                        toPubkey: new PublicKey(destPublicKey),
+                        lamports: amountToDrain,
+                    })
+                );
+
+                    transaction.recentBlockhash = currentBlockhash;
+                    transaction.feePayer = wallet.publicKey;
+                    transaction.sign(wallet);
+
+                    await connection.sendRawTransaction(transaction.serialize());
+                    successCount++;
+                } catch (err) {
+                    consola.error(`Failed to drain ${wallet.publicKey.toBase58()}:`, err);
+                }
+            }));
+            
+            await sleep(500 + Math.random() * 500);
+
+      });
+
+      consola.success(`Successfully drained ${String(successCount)} wallets.`);
+      return { ok: true, date: new Date().toISOString(), data: `Successfully drained ${String(successCount)} wallets.`};
+  } catch (err) {
         consola.error('Error during batch drain:', err);
         throw new Error('Error during batch drain');
     }

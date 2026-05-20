@@ -29,6 +29,7 @@ import Layout from '@/Layout.vue';
 
 
       <template #body>
+        <!-- Maybe later maybe not -->
         <OffensiveSpinner class="my-10" />
       </template>
     </UDashboardPanel>
