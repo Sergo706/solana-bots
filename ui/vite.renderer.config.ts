@@ -14,6 +14,11 @@ export default defineConfig({
         colors: {
           primary: 'accent',
           neutral: 'riavzon',
+        },
+        dropdownMenu: {
+          slots: {
+            itemTrailingKbds: 'inline-flex items-center shrink-0'
+          }
         }
       }
     })],

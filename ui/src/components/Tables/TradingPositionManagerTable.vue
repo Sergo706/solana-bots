@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-unnecessary-condition -->
 <script setup lang="ts">
 import { computed, h, onMounted, ref, resolveComponent, useTemplateRef } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
@@ -14,13 +15,13 @@ import SellForm from '../Forms/SellForm.vue';
 import { useMassOut } from '@/composables/useOutAll';
 import MassOutButton from '../Forms/MassOutButton.vue';
 import { useMassSell } from '@/composables/useSell';
-import type { MaybeRef } from '@/utils/useOrCreateRef';
 import LoadingModal from '../Modals/LoadingModal.vue';
 import type { SellResponseMain } from '@/types/TradesResponse';
 import { successModal } from '@/utils/tables/successModalSum';
 import { dtFmt } from '@/utils/date';
 import { getSortableHeader } from '@/utils/tables/sortableHeader';
 import type { Positions } from '@/types/positons';
+import type { ResultsWithId } from '@/types/OperationWorker';
 
 const UButton = resolveComponent('UButton');
 const UBadge = resolveComponent('UBadge');
@@ -33,6 +34,19 @@ const openLoadingModal = ref(false);
 
 
 const emit = defineEmits<(e: 'submitted') => void>();
+
+const { 
+  execute: execSell,
+  successResponse,
+  success,
+  successRawResponse,
+  targetMintAddress,
+  targetedPositionsToSell,
+  selectedSpecific,
+  selectedWallets,
+  numberOfWallets,
+  
+} = useMassSell();
 
 defineProps<{
   data?: Positions[]
@@ -189,13 +203,11 @@ function getRowItems(position: Positions) {
       async onSelect() {
         openLoadingModal.value = true;
         try {
-          const { execute: execSell, successResponse, success } = useMassSell({
-            targetMintAddress: ref(position.targetMintAddress),
-            numberOfWallets: ref(1),
-            selectedSpecific: ref(true),
-            selectedWallets: ref([position.walletAddress]),
-            targetedPositionsToSell: [position.id] as unknown as MaybeRef<number[]>
-          });
+            targetMintAddress.value = position.targetMintAddress;
+            numberOfWallets.value = 1;
+            selectedSpecific.value = true;
+            selectedWallets.value = [position.walletAddress];
+            targetedPositionsToSell.value = [position.id];
 
           await execSell();
           if (success.value && successResponse.value) {
@@ -236,66 +248,57 @@ const selectedPositions = computed(() => {
 
 async function closeSelected() {
   const positions = selectedPositions.value.map((position) => ({ ...position }));
-  const publicKeys = positions.map((p) => p.walletAddress);
-  const positionsId = positions.map((pos) => pos.id);
   const targetMints = [...new Set(positions.map((pos) => pos.targetMintAddress))];
   
-  const results: SellResponseMain[] = [];
+  const results: ResultsWithId<SellResponseMain>[] = [];
   openLoadingModal.value = true;
 
 try {
     for (const mint of targetMints) {
-      const { execute: execSell, successResponse, success } = useMassSell({
-        targetMintAddress: ref(mint),
-        numberOfWallets: ref(publicKeys.length),
-        selectedSpecific: ref(true),
-        selectedWallets: ref(publicKeys),
-        targetedPositionsToSell: positionsId as unknown as MaybeRef<number[]>
-      });
-      
+      const positionsForMint = positions.filter((p) => p.targetMintAddress === mint);
+      const publicKeys = positionsForMint.map((p) => p.walletAddress);
+      const positionsIds = positionsForMint.map((pos) => pos.id);
+
+      targetMintAddress.value = mint;
+      numberOfWallets.value = publicKeys.length;
+      selectedSpecific.value = true;
+      selectedWallets.value = publicKeys;
+      targetedPositionsToSell.value = positionsIds;
+
       await execSell();
       
-      if (success.value && successResponse.value) {
-          results.push(successResponse.value);
+      if (success.value && successRawResponse.value) {
+          results.push(successRawResponse.value);
       }
     }
 
     if (results.length > 0) {
 
       const aggregated = results.reduce<Agg>(
-        (acc, r) => {
-          if (typeof r.data === 'string') {
-            acc.messages.push(r.data);
-            if (!r.ok) acc.ok = false;
-          } else {
-            acc.positionsClosed += r.data.positionsClosed;
-            acc.walletsCount += r.data.walletsCount;
-            acc.failedWallets.push(...(r.data.failedWallets));
-            if (!r.ok) acc.ok = false;
+          (acc, r) => {
+            if (r.ok && r.data) {
+              acc.positionsClosed += r.data.positionsClosed;
+              acc.walletsCount += r.data.walletsCount;
+              acc.failedWallets.push(...r.data.failedWallets);
+              acc.walletsSpent.push(...r.data.walletsSpent);
+              
+            }
+            return acc;
+          },
+          { 
+            positionsClosed: 0, 
+            walletsCount: 0, 
+            failedWallets: [], 
+            walletsSpent: []
           }
-          return acc;
-        },
-        { ok: true, positionsClosed: 0, walletsCount: 0, failedWallets: [], messages: [] }
-      );
+        );
 
-      let finalSummary: SellResponseMain;
-      if (aggregated.messages.length > 0 && aggregated.positionsClosed === 0 && aggregated.walletsCount === 0 && aggregated.failedWallets.length === 0) {
-        finalSummary = {
-          ok: aggregated.ok,
-          date: new Date().toISOString(),
-          data: aggregated.messages.join('; ')
-        };
-      } else {
-        finalSummary = {
-          ok: aggregated.ok,
-          date: new Date().toISOString(),
-          data: {
-            positionsClosed: aggregated.positionsClosed,
-            walletsCount: aggregated.walletsCount,
-            failedWallets: aggregated.failedWallets
-          }
-        };
-      }
+      const finalSummary: SellResponseMain = {
+          positionsClosed: aggregated.positionsClosed,
+          walletsCount: aggregated.walletsCount,
+          failedWallets: aggregated.failedWallets,
+          walletsSpent: aggregated.walletsSpent
+      };
 
       await successModal(finalSummary);
       emit('submitted');
@@ -314,6 +317,7 @@ try {
   >
     <div class="flex items-center gap-2">
       <TradeModal
+        :show-btn="true"
         btn-size="md"
         :btn-color="'success'"
         :btn-label="'Buy'"
@@ -329,6 +333,9 @@ try {
       </TradeModal>
 
       <TradeModal
+        :show-btn="true"
+
+
         btn-size="md"
         :btn-color="'primary'"
         :btn-label="'Sell'"
@@ -345,6 +352,8 @@ try {
 
       <TradeModal
         v-if="!dontShowAgainWarning"
+
+        :show-btn="true"
         btn-size="md"
         :btn-color="'error'"
         :btn-label="'CLOSE ALL POSITIONS'"
@@ -469,6 +478,8 @@ try {
   > 
     <template #actions>
       <TradeModal
+        :show-btn="true"
+
         btn-size="md"
         :btn-color="'success'"
         :btn-label="'Buy'"

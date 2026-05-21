@@ -51,10 +51,26 @@ getPositions: () => Promise<Results<Positions[]>>
 getPositionsView: () => Promise<Results<TradingTerminalData[]>>
 }
 
+export interface WindowApi {
+  minimize: () => void,
+  maximize: () => void,
+  close: () => void,
+  openWebsite: (url: string) => void,
+  newWindow: () => void,
+  quitApp: () => void,
+  reload: () => void,
+  toggleFullScreen: () => void,
+  zoomIn: () => void,
+  zoomOut: () => void,
+  resetZoom: () => void,
+  toggleDevTools: () => void,
+}
+
 declare global {
   interface Window {
     password: PasswordAPI
     tradesApi: TradingAPI
     walletsApi: WalletsAPI
+    electronWindowApi: WindowApi
   }
 }

@@ -45,6 +45,8 @@ const totalSolInSubs = computed(() => (
 
           <template #right>
             <TradeModal
+              :show-btn="true"
+
               btn-size="sm"
               :btn-color="'success'"
               :btn-label="'Create Wallets'"

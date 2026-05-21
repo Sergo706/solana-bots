@@ -4,9 +4,9 @@ import type {  NavigationMenuItem } from '@nuxt/ui';
 import { ref } from 'vue';
 import LayoutLogo from '@/components/LayoutLogo.vue';
 import { useRandomQuote } from '@/composables/randomQuetes';
+import { useSidebar } from './composables/useSidebar';
 
-
-const open = ref(true);
+const { open } = useSidebar();
 const quote = ref(useRandomQuote());
 const links: NavigationMenuItem[][] = [
   [
@@ -48,12 +48,15 @@ const links: NavigationMenuItem[][] = [
     }
   ]
 ];
-
+const logo = new URL('assets/public/smartpepe.jpg', import.meta.url).href;
 
 </script>
 
 <template>
-  <UDashboardGroup unit="rem">
+  <UDashboardGroup
+    unit="rem" 
+    :ui="{ base: 'fixed inset-0 top-10 flex overflow-hidden' }"
+  >
     <UDashboardSidebar
       id="default"
       v-model:open="open"
@@ -66,10 +69,16 @@ const links: NavigationMenuItem[][] = [
         class: 'rounded-full'
       }"
       class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
+      :ui="{
+        root: 'relative hidden lg:flex flex-col min-h-0 h-full w-(--width) shrink-0 border-e border-default',
+        footer: 'lg:border-t lg:border-default'
+      }"
     >
       <template #header="{ collapsed }">
-        <LayoutLogo :is-text="!collapsed" />
+        <LayoutLogo
+          :logo="logo"
+          :is-text="!collapsed"
+        />
       </template>
 
       <template #default="{ collapsed }">

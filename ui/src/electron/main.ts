@@ -10,7 +10,7 @@ import { checkConfigStatus } from './checkOnBoarding';
 import { migrateForElec } from '@solana-bots/db/connection';
 import { setupVolumeBotBridge } from './utils/volumeBotIPC';
 import { routeOps, spawnDbProcess } from './utils/spawnOpWorker';
-
+import { setupWindowIpcApi } from './windowIPC';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let vault: string | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -24,6 +24,7 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    frame: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -104,13 +105,15 @@ void app.whenReady().then(async () => {
 });
 
     ipcMain.handle('password-status', () => vault ? true : false);
-    if (mainWindow) setupVolumeBotBridge(mainWindow, () => vault);
+    if (mainWindow) {
+      setupVolumeBotBridge(mainWindow, () => vault);
+    }
+    setupWindowIpcApi(createWindow);
     walletActions.forEach((action) => { action(() => vault); });
     ipcMain.handle('start', async () => await checkConfigStatus());
     ipcMain.handle('get:positions', async () =>  await routeOps('get:positions'));
     ipcMain.handle('get:trading:terminal:view', async () => await routeOps('get:trading:terminal:view'));
     tradingActions.forEach((action) => { action(() => vault); });
-  
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();

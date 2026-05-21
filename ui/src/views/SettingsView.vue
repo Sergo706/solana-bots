@@ -12,6 +12,8 @@ import Layout from '@/Layout.vue';
           </template>
           <template #right>
             <TradeModal
+              :show-btn="true"
+
               btn-size="sm"
               :btn-color="'success'"
               :btn-label="'Create Wallets'"

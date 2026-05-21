@@ -1,36 +1,42 @@
 <script setup lang="ts">
-import {ref } from 'vue';
-const props = defineProps<{
+
+defineProps<{
   title: string;
   msg: string;
-  btnLabel: string;
-  btnColor: "primary" | "secondary" | "success" | "info" | "warning" | "error" | "neutral"
-  btnIcon: string
-  btnSize: "xs" | "sm" | "md" | "lg" | "xl"
-  open?: boolean
+  btnLabel?: string;
+  btnColor?: "primary" | "secondary" | "success" | "info" | "warning" | "error" | "neutral"
+  btnIcon?: string
+  btnSize?: "xs" | "sm" | "md" | "lg" | "xl"
+  showBtn: boolean
 }>();
 
-const open = ref<boolean>(props.open);
+const model = defineModel<boolean>({
+  default: false
+});
+
+const emit = defineEmits<(e: 'close', value: boolean) => void>();
 </script>
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="model"
     :title="title"
     :description="msg"
     :close="{
+      onClick: () => emit('close', false),
       color: 'primary',
       variant: 'outline',
       class: 'rounded-full'
     }"
   > 
     <UButton
-      :label="btnLabel"
+      v-if="showBtn"
+      :label="btnLabel ?? 'open'"
       variant="subtle"
       class="cursor-pointer"
-      :color="btnColor"
-      :size="btnSize"
-      :trailing-icon="btnIcon"
+      :color="btnColor ?? 'primary'"
+      :size="btnSize ?? 'md'"
+      :trailing-icon="btnIcon ?? 'i-lucide-play'"
     />
     <template #body>
       <slot name="contentModal" />

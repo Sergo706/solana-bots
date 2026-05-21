@@ -388,6 +388,7 @@ try {
   >
     <div class="flex items-center gap-2">
       <TradeModal
+        :show-btn="true"
         btn-size="md"
         :btn-color="'success'"
         :btn-label="'Buy'"
@@ -403,6 +404,8 @@ try {
       </TradeModal>
 
       <TradeModal
+        :show-btn="true"
+
         btn-size="md"
         :btn-color="'primary'"
         :btn-label="'Sell'"
@@ -419,6 +422,8 @@ try {
 
       <TradeModal
         v-if="!dontShowAgainWarning"
+
+        :show-btn="true"
         btn-size="md"
         :btn-color="'error'"
         :btn-label="'CLOSE ALL POSITIONS'"
@@ -616,6 +621,8 @@ try {
   > 
     <template #actions>
       <TradeModal
+        :show-btn="true"
+
         btn-size="md"
         :btn-color="'success'"
         :btn-label="'Buy'"

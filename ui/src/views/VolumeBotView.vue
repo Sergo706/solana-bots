@@ -127,6 +127,8 @@ onBeforeUnmount(() => {
           </template>
           <template #right>
             <TradeModal
+              :show-btn="true"
+
               btn-size="sm"
               :btn-color="'success'"
               :btn-label="'Create Wallets'"
@@ -145,6 +147,7 @@ onBeforeUnmount(() => {
           <template #left>
             <div class="flex justify-center items-center gap-3">
               <TradeModal
+                :show-btn="true"
                 btn-size="md"
                 :btn-color="'success'"
                 :btn-label="'Start'"

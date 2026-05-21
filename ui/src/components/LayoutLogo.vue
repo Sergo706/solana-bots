@@ -1,12 +1,14 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-const logo = new URL('../assets/public/solana-bots.webp', import.meta.url).href;
 
-defineProps({
-  isText: {
-    type: Boolean,
-    default: false,
-  },
+
+withDefaults(defineProps<{
+  isText?: boolean
+  size?: '2xl' | 'md' | '3xs' | '2xs' | 'xs' | 'sm' | 'lg' | 'xl' | '3xl'
+  logo: string
+}>(), {
+  isText: false,
+  size: 'xl',
 });
 </script>
 
@@ -18,9 +20,10 @@ defineProps({
     <UUser
       :name=" isText ? 'Solana Bots' : ''"
       :avatar="{
-        src: logo
+        src: logo,
+        ui: { image: 'object-cover object-[center_25%]' }
       }"
-      size="2xl"
+      :size="size"
     />
   </RouterLink>
 </template>

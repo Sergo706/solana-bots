@@ -268,6 +268,7 @@ async function drainBulkFunds() {
     />
     <div class="flex items-center gap-2">
       <TradeModal
+        :show-btn="true"
         btn-size="md"
         :btn-color="'success'"
         :btn-label="'Create Wallets'"
@@ -283,6 +284,8 @@ async function drainBulkFunds() {
       </TradeModal>
 
       <TradeModal
+        :show-btn="true"
+
         btn-size="md"
         :btn-color="'primary'"
         :btn-label="'Add Funds'"
@@ -298,6 +301,8 @@ async function drainBulkFunds() {
       </TradeModal>
 
       <TradeModal
+        :show-btn="true"
+
         btn-size="md"
         :btn-color="'primary'"
         :btn-label="'Withdrawn Funds'"
@@ -314,6 +319,8 @@ async function drainBulkFunds() {
 
       <TradeModal
         v-if="!dontShowAgainWarning"
+
+        :show-btn="true"
         btn-size="md"
         :btn-color="'error'"
         :btn-label="'DRAIN ALL WALLETS'"
@@ -445,6 +452,8 @@ async function drainBulkFunds() {
   > 
     <template #actions>
       <TradeModal
+        :show-btn="true"
+
         btn-size="md"
         :btn-color="'success'"
         :btn-label="'Create Wallets'"

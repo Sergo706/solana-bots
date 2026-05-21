@@ -79,6 +79,23 @@ onRawConsoleUpdate: (cb: (text: string) => void) => {
     getPositionsView: () => ipcRenderer.invoke('get:trading:terminal:view'),
 });
 
+contextBridge.exposeInMainWorld('electronWindowApi', {
+  minimize: () => { ipcRenderer.send('window-min'); },
+  maximize: () => { ipcRenderer.send('window-max'); },
+  close: () => { ipcRenderer.send('window-close'); },
+  openWebsite: (url: string) => { ipcRenderer.send('open-external', url); },
+
+  newWindow: () => { ipcRenderer.send('file:new-window'); },
+  quitApp: () => { ipcRenderer.send('file:quit'); },
+  
+  reload: () => { ipcRenderer.send('view:reload'); },
+  toggleFullScreen: () => { ipcRenderer.send('view:toggle-fullscreen'); },
+  zoomIn: () => { ipcRenderer.send('view:zoom-in'); },
+  zoomOut: () => { ipcRenderer.send('view:zoom-out'); },
+  resetZoom: () => { ipcRenderer.send('view:reset-zoom'); },
+  toggleDevTools: () => { ipcRenderer.send('view:toggle-devtools'); }
+
+});
 
 // ai maybe later
 // rug assessment maybe later
