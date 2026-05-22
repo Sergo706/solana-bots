@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { app, BrowserWindow, session, ipcMain, safeStorage } from 'electron';
 import path from 'node:path';
-import started from 'electron-squirrel-startup';
+import started from './utils/electronStartEsm';
 import { fileURLToPath } from 'node:url';
 import walletActions from './walletsIPC';
 import { rpcAndAPI } from '@solana-bots/utils/utils';
@@ -19,6 +19,7 @@ if (started) {
   vault = null;
   app.quit();
 }
+
 const migrationDir = app.isPackaged ? path.join(process.resourcesPath, 'migrations') : undefined; // use default
 const currentDir = import.meta.dirname;
 const icon = path.join(currentDir, '..', 'build', 'icons', '256x256.png');
@@ -60,10 +61,10 @@ session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
 
 app.disableHardwareAcceleration();
 app.setAppUserModelId("com.squirrel.SolanaBots.SolanaBots");
-void app.whenReady().then(() => { 
+void app.whenReady().then(async () => { 
   try {
     console.log("Starting database migrations...");
-    migrateForElec(migrationDir);
+    await migrateForElec(migrationDir);
     console.log("Migrations complete!"); 
     spawnDbProcess();
   } catch (err) {

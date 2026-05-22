@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ignoreBunPlugin } from './vite.main.config';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
@@ -13,6 +14,10 @@ export default defineConfig({
         ssr: {
     noExternal: true
   },
+    plugins: [ignoreBunPlugin],
+    optimizeDeps: {
+    exclude: ['bun:sqlite', 'drizzle-orm/bun-sqlite', 'drizzle-orm/bun-sqlite/migrator']
+  },
   build: {
     outDir: 'dist-worker/ops',
     ssr: true,
@@ -23,8 +28,11 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
-        'electron',
-        'better-sqlite3'
+        'electron', 
+        'better-sqlite3',
+        'bun:sqlite',
+        'drizzle-orm/bun-sqlite',
+        'drizzle-orm/bun-sqlite/migrator',
       ],
       output: {
         entryFileNames: '[name].mjs',

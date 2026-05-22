@@ -11,7 +11,6 @@
     "build:workers": "vite build -c vite.worker.config.ts && vite build -c vite.opworker.config.ts",
     "package": "npm run build:workers && electron-forge package",
     "make": "npm run build:workers && electron-forge make",
-    "publish": "electron-forge publish",
     "lint": "eslint ."
   },
   "author": {
@@ -29,7 +28,7 @@
     "@electron-forge/plugin-fuses": "7.11.1",
     "@electron-forge/plugin-vite": "7.11.1",
     "@electron/fuses": "1.8.0",
-    "@types/electron-squirrel-startup": "1.0.2",
+    "@types/debug": "^4.1.13",
     "@vitejs/plugin-vue": "6.0.6",
     "electron": "41.0.0",
     "eslint": "8.57.1",
@@ -47,7 +46,6 @@
     "bs58": "6.0.0",
     "consola": "3.4.2",
     "drizzle-orm": "0.45.2",
-    "electron-squirrel-startup": "1.0.1",
     "tailwindcss": "4.3.0",
     "vue": "3.5.34",
     "vue-router": "5.0.7"

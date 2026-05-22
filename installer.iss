@@ -10,7 +10,7 @@ PrivilegesRequired=admin
 Uninstallable=yes
 
 [Files]
-Source: "build\solana-bots-win.exe"; DestDir: "{app}"; DestName: "solana-bots.exe"; Flags: ignoreversion
+Source: "/build/cli/solana-bots-win.exe"; DestDir: "{app}"; DestName: "solana-bots.exe"; Flags: ignoreversion
 Source: "build\migrations\*"; DestDir: "{app}\migrations"; Flags: ignoreversion recursesubdirs
 
 [Icons]

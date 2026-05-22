@@ -59,11 +59,13 @@
   },
   "scripts": {
     "migrate": "drizzle-kit generate && drizzle-kit push",
-    "compile:linux": "bun build src/main.ts --compile --target bun-linux-x64 --outfile build/solana-bots-linux",
-    "compile:windows": "bun build src/main.ts --compile --target bun-windows-x64 --outfile build/solana-bots-win.exe",
-    "compile:macos": "bun build src/main.ts --compile --target bun-darwin-x64 --outfile build/solana-bots-macos",
+    "compile:linux": "bun build src/main.ts --compile --target bun-linux-x64 --outfile build/cli/solana-bots-linux",
+    "compile:windows": "bun build src/main.ts --compile --target bun-windows-x64 --outfile build/cli/solana-bots-win.exe",
+    "compile:macos": "bun build src/main.ts --compile --target bun-darwin-x64 --outfile build/cli/solana-bots-macos",
     "compile:all": "npm run compile:linux && npm run compile:windows && npm run compile:macos",
+    
     "build": "tsdown && npx drizzle-kit generate && cp -r src/db/migrations dist/migrations && npm run compile:all && cp -r dist/migrations build/migrations",
+
     "make-installer": "docker run --rm -v \"$PWD\":/work -w /work amake/innosetup installer.iss",
     "lint": "eslint .",
     "types": "npx tsc --noEmit"
