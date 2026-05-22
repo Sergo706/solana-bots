@@ -7,9 +7,8 @@ import crypto from 'node:crypto';
 
 let dbProcess: ReturnType<typeof utilityProcess.fork> | null = null;
 const currentDir = import.meta.dirname;
-const workerPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar', '.vite', 'build', 'worker.mjs') : 
-        path.join(currentDir, '..', '..', 'dist-worker', 'OperationWorker.mjs');
-
+const workerPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar', 'dist-worker', 'ops', 'OperationWorker.mjs') : 
+        path.join(currentDir, '..', '..', 'dist-worker', 'ops', 'OperationWorker.mjs');
 
 
 export const spawnDbProcess = () => {
@@ -22,6 +21,14 @@ export const spawnDbProcess = () => {
 
   dbProcess = utilityProcess.fork(workerPath, [], {stdio: 'pipe'});
 
+  dbProcess.stdout?.on('data', (data) => {
+    console.log(`[Worker stdout]: ${data}`);
+  });
+
+  dbProcess.stderr?.on('data', (data) => {
+      console.error(`[Worker stderr]: ${data}`);
+    });
+    
   dbProcess.on('exit', (code) => {
     dbProcess = null; 
     console.error(`Database worker exited with code ${code}. Restarting in 1s...`);
@@ -51,7 +58,6 @@ export const routeOps = <T>(action: string, decryptedPassword?: string, args: un
         if (data.id !== requestId) return;
         dbProcess.off('message', handleResponse);
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         resolve(data);
       };
     dbProcess.on('message', handleResponse);

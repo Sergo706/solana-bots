@@ -13,6 +13,8 @@ const { error: postionsError, loading: postionsLoading, getAll: getAllPostions, 
 
 
 const retry = async () => {
+    data.value = [];
+    positions.value = [];
     await getAll();
     await getAllPostions();
   };

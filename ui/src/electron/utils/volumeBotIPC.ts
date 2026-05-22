@@ -23,7 +23,7 @@ export function setupVolumeBotBridge(mainWindow: BrowserWindow, getVault: () => 
             Buffer.from(vault, 'base64')
         );  
       const currentDir = import.meta.dirname;
-      const cliScriptPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar', '.vite', 'build', 'worker.mjs') : 
+      const cliScriptPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar', 'dist-worker', 'worker.mjs') : 
         path.join(currentDir, '..', '..', 'dist-worker', 'worker.mjs');
 
       if (!fs.existsSync(cliScriptPath)) {

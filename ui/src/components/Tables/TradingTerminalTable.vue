@@ -594,7 +594,7 @@ try {
 
                 <span>
                   Created:
-                  {{ formatDate(wallet.created_at) }}
+                  {{ formatDate(wallet.created_at * 1000) }}
                 </span>
               </div>
             </div>

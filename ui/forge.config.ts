@@ -6,25 +6,81 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
+import path from 'node:path';
+
+const currentDir = import.meta.dirname;
+const migrationDir = path.join(currentDir, '..', 'src', 'db', 'migrations')
 
 const config: ForgeConfig = {
   packagerConfig: {
+    name: 'Solana Bots',
     asar: true,
+    ignore: [
+        /node_modules\/(?!(better-sqlite3|bindings|file-uri-to-path)\/)/,
+        /^\/src($|\/)/,
+        /^\/\.gitignore$/,
+        /^\/\.eslintignore$/,
+        /\.d\.ts$/,
+        /^\/tsconfig\.json$/,
+        /^\/eslint\.config\.mjs$/,
+        /^\/forge\.config\.ts$/,
+        /^\/vite\..*\.config\.ts$/,
+    ],
+    appCategoryType: 'Productivity',
+    overwrite: true, 
+    appVersion: '1.0.0',
+    appCopyright: 'Solana bots https://riavzon.com - All right reserved',
+    darwinDarkModeSupport: true,
+    executableName: 'solana-bots',
+    extraResource: [
+        migrationDir
+    ],
+    icon: './build/icons/icon'
   },
-  rebuildConfig: {},
+  rebuildConfig: {
+    force: true,
+  },
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      authors: 'Sergey Riavzon',
+      description: 'Solana Trading Terminal and Bot Manager',
+      name: 'SolanaBots',
+      setupIcon: './build/icons/icon.ico', 
+      version: '1.0.0',
+    }),
+
     new MakerZIP({}, ['darwin']),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerRpm({
+      options: {
+        homepage: 'https://riavzon.com',
+        genericName: 'Trading bot',
+        icon: './build/icons/256x256.png',
+        description: 'Solana Trading Terminal and Bot Manager',
+        categories: ['Utility', 'Network'],
+        productName: 'Solana bots',
+        productDescription: 'A professional-grade Solana trading terminal and automation suite designed for high-frequency volume generation and strategic asset management. Solana Bots empowers users to execute complex trading strategies across multiple sub-wallets simultaneously, featuring a powerful Volume Bot for automated buy/sell cycles, mass-operation tools for instant position closing , and a comprehensive wallet management system.'
+      }
+    }),
+
+    new MakerDeb({
+      options: {
+        maintainer: 'Sergey Riavzon - https://riavzon.com',
+        genericName: 'Trading bot',
+        homepage: 'https://riavzon.com',
+        description: 'Solana Trading Terminal and Bot Manager',
+        icon: './build/icons/256x256.png', 
+        categories: ['Utility', 'Network'], 
+        productName: 'Solana bots',
+        productDescription: 'A professional-grade Solana trading terminal and automation suite designed for high-frequency volume generation and strategic asset management. Solana Bots empowers users to execute complex trading strategies across multiple sub-wallets simultaneously, featuring a powerful Volume Bot for automated buy/sell cycles, mass-operation tools for instant position closing , and a comprehensive wallet management system.'
+      }
+    }),
   ],
   plugins: [
+    new AutoUnpackNativesPlugin({}),
     new VitePlugin({
-      // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
-      // If you are familiar with Vite configuration, it will look really familiar.
       build: [
         {
-          // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
           entry: 'src/electron/main.ts',
           config: 'vite.main.config.ts',
           target: 'main',
@@ -33,7 +89,7 @@ const config: ForgeConfig = {
           entry: 'src/electron/preload.ts',
           config: 'vite.preload.config.ts',
           target: 'preload',
-        },
+        }
       ],
       renderer: [
         {
@@ -42,8 +98,7 @@ const config: ForgeConfig = {
         },
       ],
     }),
-    // Fuses are used to enable/disable various Electron functionality
-    // at package time, before code signing the application
+
     new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,

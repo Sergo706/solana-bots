@@ -135,7 +135,7 @@ const onSubmit = async () => {
       </template>
 
       <UInputNumber
-        v-model="(fee as number)"
+        v-model="fee"
         :min="0"
         :step="0.000000001"
         :format-options="{

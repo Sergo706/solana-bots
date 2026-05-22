@@ -115,9 +115,16 @@ process.parentPort.on('message', async (event) => {
     else if (action === 'trade:sell') {
       const [targetMintAddress, numberOfWallets, sellPercentage, chunksToProcess, chosenWallets, targetedPositionsToSell] = args;
 
-      if (!targetMintAddress || !numberOfWallets || !sellPercentage) {
-           throw new Error('Missing required arguments');
+      const chosenWall = chosenWallets as SerializedWallet[] | undefined;
+
+      if (!targetMintAddress) {
+           throw new Error('Missing target mint address');
       }
+      
+      if (!numberOfWallets && (!chosenWall || chosenWall.length === 0)) {
+           throw new Error('Missing wallets');
+      }
+
       if (typeof targetMintAddress !== 'string') {
            throw new Error('Invalid arguments');
       }
@@ -126,7 +133,6 @@ process.parentPort.on('message', async (event) => {
       const wallets = Number(numberOfWallets);
       const sellPre = Number(sellPercentage);
       const chunks = Number(chunksToProcess ?? 1);
-      const chosenWall = chosenWallets as SerializedWallet[] | undefined;
       const targetedPositions = targetedPositionsToSell as number[];
 
       const chosen: Keypair[] = [];
@@ -143,8 +149,14 @@ process.parentPort.on('message', async (event) => {
 
     else if (action === 'trade:buy') {
       const [targetMintAddress, solAmountsPerWallet, numberOfWallets, chunksToProcess, chosenWallets] = args;
+      const chosenWall = chosenWallets as SerializedWallet[] | undefined;
+
       if (!targetMintAddress || !solAmountsPerWallet) {
            throw new Error('Missing required arguments');
+      }
+
+      if (!numberOfWallets && (!chosenWall || chosenWall.length === 0)) {
+           throw new Error('Missing wallets');
       }
 
       if (typeof targetMintAddress !== 'string') {
@@ -155,7 +167,6 @@ process.parentPort.on('message', async (event) => {
       const solPerWallet = Number(solAmountsPerWallet);
       const wallets = Number(numberOfWallets);
       const chunks = Number(chunksToProcess ?? 1);
-      const chosenWall = chosenWallets as SerializedWallet[] | undefined;
 
       const chosen: Keypair[] = [];
       if (chosenWall && chosenWall.length > 0) {

@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
@@ -18,7 +17,11 @@ export default defineConfig({
       fileName: 'main',
     },
     rollupOptions: {
-      external: ['electron', 'node:path', 'node:url', 'electron-squirrel-startup', '@libsql/client',],
+      external: ['electron', 'better-sqlite3'],
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js',
+        }
     },
   },
 })

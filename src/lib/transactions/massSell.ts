@@ -49,7 +49,8 @@ export async function massSell(targetMintAddress: string, numberOfWallets: numbe
       filters.push(inArray(positionsTable.id, targetedPositionsToSell));
   }
 
-  const positions = await db.select().from(positionsTable).where(and(...filters)).limit(numberOfWallets);
+  const limit = (chosenWallets && chosenWallets.length > 0) ? chosenWallets.length : numberOfWallets;
+  const positions = await db.select().from(positionsTable).where(and(...filters)).limit(limit);
 
   if (positions.length === 0) {
     log.warn(`No positions found in database for mint: ${targetMintAddress}`);

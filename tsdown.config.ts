@@ -18,20 +18,5 @@ export default defineConfig([
         cli: 'src/main.ts'
      },
      format: ['esm'],
-   },
-    {
-     entry: ['ui/src/electron/utils/worker.ts', 'ui/src/electron/utils/OperationWorker.ts'],
-     outDir: 'ui/dist-worker',
-     format: ['esm'],
-     target: ['node20', "esnext"],
-     clean: true,
-     sourcemap: true,
-     dts: false,
-     external: ['*'],
-     alias: {
-      '@solana-bots': path.resolve(projectRoot, './src'),
-      '@': path.resolve(projectRoot, './ui/src'),
-    },
-   },
-   
+   }
 ])

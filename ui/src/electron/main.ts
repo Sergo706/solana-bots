@@ -19,12 +19,16 @@ if (started) {
   vault = null;
   app.quit();
 }
+const migrationDir = app.isPackaged ? path.join(process.resourcesPath, 'migrations') : undefined; // use default
+const currentDir = import.meta.dirname;
+const icon = path.join(currentDir, '..', 'build', 'icons', '256x256.png');
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     frame: false,
+    icon,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -52,16 +56,14 @@ session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
-
-
-  mainWindow.webContents.openDevTools();
 };
-app.disableHardwareAcceleration();
 
-void app.whenReady().then(async () => { 
+app.disableHardwareAcceleration();
+app.setAppUserModelId("com.squirrel.SolanaBots.SolanaBots");
+void app.whenReady().then(() => { 
   try {
     console.log("Starting database migrations...");
-    await migrateForElec();
+    migrateForElec(migrationDir);
     console.log("Migrations complete!"); 
     spawnDbProcess();
   } catch (err) {
