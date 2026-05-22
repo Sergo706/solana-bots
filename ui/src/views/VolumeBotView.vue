@@ -224,7 +224,7 @@ onBeforeUnmount(() => {
           <Logs
             :raw-logs="rawLogs"
             :logs="logs"
-            class="w-full"
+            class="w-full mb-8"
             @clear="() => { logs = []; rawLogs = []; }"
           />
         </div>
