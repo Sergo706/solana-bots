@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /* eslint-disable @typescript-eslint/prefer-optional-chain */
 import * as schema from "./index.js";
@@ -6,6 +5,10 @@ import path from "path";
 import fs from 'node:fs';
 import os from 'node:os';
 import consola from "consola";
+import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+
+type AppDatabase = BunSQLiteDatabase<typeof schema> | BetterSQLite3Database<typeof schema>;
 
 const dataDir =
   process.platform === "win32"
@@ -20,8 +23,7 @@ const dataDir =
 
 const dbPath = path.join(dataDir, 'wallets.db');
 const isBun = (typeof process.versions !== 'undefined' && process.versions.bun !== undefined) || process.env['CLI_BUILD'];
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let db: any;
+let db: AppDatabase;
 
 if (isBun) {
   const { Database } = await import(/* @vite-ignore */ "bun:sqlite");
@@ -68,7 +70,7 @@ export const migrateForElec = async (customFolder?: string) => {
 
   const dir = customFolder ?? migrationsFolder;
 
-migrate(db, { 
+migrate(db as BetterSQLite3Database<typeof schema>, { 
   migrationsFolder: dir
 });
 return;

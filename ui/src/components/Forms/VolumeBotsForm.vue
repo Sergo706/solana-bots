@@ -272,6 +272,14 @@ const onSubmit = async () => {
         label="Mass out"
         description="Mark this to get out on all open positions when the bot finishes"
       />
+      <template #help>
+        <p class="text-neutral-500 text-xs">
+          Stopping the volume bot mid-run will <b>NOT</b> automatically exit your open positions. 
+          Think of the Stop button as a kill switch: it instantly prevents the bot from making any further moves, including massing out. <br>
+          Make sure you properly configure the run timer and the maximum amount of SOL to use from <b>EACH</b> wallet, 
+          or simply navigate to the 'Trade' tab and click 'Mass Out' if you choose to stop the bot manually.
+        </p>
+      </template>
     </UFormField>
     
 

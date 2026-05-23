@@ -83,9 +83,60 @@ rm -rf ui/out ui/.vite ui/dist-worker dist
 echo "Compilation and version tracking successful for ${VERSION_STR}!"
 
 
-# if [ -f .env.build ]; then
-#     echo " Loading build config from .env."
-#     set -a 
-#     source .env.build
-#     set +a
-# fi
+# R2 Upload Phase
+# Uploads everything under build/ to Cloudflare R2
+#
+# Required env vars
+#   CLOUDFLARE_R2_ACCOUNT_ID
+#   CLOUDFLARE_R2_ACCESS_KEY_ID
+#   CLOUDFLARE_R2_SECRET_ACCESS_KEY
+#   CLOUDFLARE_R2_BUCKET
+#
+# Optional:
+#   R2_UPLOAD_PREFIX: key prefix inside the bucket
+#   R2_SKIP_UPLOAD: set to "1" to skip
+
+if [ -f .env.build ]; then
+    echo "Loading build config from .env.build"
+    set -a
+    source .env.build
+    set +a
+fi
+
+if [ "${R2_SKIP_UPLOAD:-0}" = "1" ]; then
+    echo "R2_SKIP_UPLOAD=1 — skipping upload phase."
+    exit 0
+fi
+
+
+for VAR in CLOUDFLARE_R2_ACCOUNT_ID CLOUDFLARE_R2_ACCESS_KEY_ID CLOUDFLARE_R2_SECRET_ACCESS_KEY CLOUDFLARE_R2_BUCKET; do
+    if [ -z "${!VAR}" ]; then
+        echo "Error: ${VAR} is not set. Skipping R2 upload."
+        exit 1
+    fi
+done
+
+
+export RCLONE_CONFIG_R2_TYPE=s3
+export RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+export RCLONE_CONFIG_R2_ACCESS_KEY_ID="$CLOUDFLARE_R2_ACCESS_KEY_ID"
+export RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$CLOUDFLARE_R2_SECRET_ACCESS_KEY"
+export RCLONE_CONFIG_R2_ENDPOINT="https://${CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+export RCLONE_CONFIG_R2_REGION="auto"
+export RCLONE_CONFIG_R2_NO_CHECK_BUCKET="true"
+export RCLONE_CONFIG_R2_FORCE_PATH_STYLE="true"
+
+R2_PREFIX="${R2_UPLOAD_PREFIX:-releases/${VERSION_STR}}"
+
+echo ""
+echo "Uploading build artifacts to R2..."
+echo "  Bucket : ${CLOUDFLARE_R2_BUCKET}"
+echo "  Prefix : ${R2_PREFIX}"
+echo ""
+
+if rclone copy build/ "r2:${CLOUDFLARE_R2_BUCKET}/${R2_PREFIX}" --progress --no-traverse; then
+    echo "Upload complete!"
+else
+    echo "Upload failed!"
+    exit 1
+fi
