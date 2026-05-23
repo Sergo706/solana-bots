@@ -36,11 +36,12 @@ echo "Wiping old build directory for a clean slate..."
 rm -rf build
 mkdir -p build/cli build/ui
 
+chmod -R 777 build
 
 echo "Building CLI..."
 export CLI_BUILD=1
 npm run build
-
+chmod -R 777 build
 docker run --rm -v "$PWD":/work -w /work amake/innosetup /DAppVersion="${NEW_VERSION}" /O"build/cli/windows-installer-${VERSION_STR}" installer.iss
 
 export CLI_BUILD=0
