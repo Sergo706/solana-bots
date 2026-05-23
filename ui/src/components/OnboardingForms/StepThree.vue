@@ -197,7 +197,7 @@ const onSubmit = async () => {
   >
     <template #title>
       <h1 class="text-2xl">
-        Now go Win
+        Now go make money
       </h1>
     </template>
     <img

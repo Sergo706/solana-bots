@@ -12,61 +12,62 @@ import { getAllWallets } from './getWallets.js';
 
 const SCRYPT_CONFIG = {
   keyLen: 32,
-  saltLen: 16,
+  saltLen: 32,
   params: { N: 16384, r: 8, p: 1 }
 };
 
 export const encryptPrivateKey = (privateKey: Uint8Array, password: string): Buffer => {
-try {
+  try {
+    const iv = crypto.randomBytes(12);
+    const salt = crypto.randomBytes(SCRYPT_CONFIG.saltLen);
+    const key = crypto.scryptSync(password, salt, SCRYPT_CONFIG.keyLen, SCRYPT_CONFIG.params);
+    
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const encrypted = Buffer.concat([cipher.update(privateKey), cipher.final()]);
+    const tag = cipher.getAuthTag();
 
-  const iv = crypto.randomBytes(16);
-  const salt = crypto.randomBytes(SCRYPT_CONFIG.saltLen);
-  const key = crypto.scryptSync(password, salt, SCRYPT_CONFIG.keyLen, SCRYPT_CONFIG.params);
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-
-  const encrypted = Buffer.concat([cipher.update(privateKey), cipher.final()]);
-
-  return Buffer.concat([salt, iv, encrypted]);
-} catch (err) {
-    consola.error(`Encryption failed:`, err);
-    process.exit(1);
-}
+    return Buffer.concat([salt, iv, tag, encrypted]);
+  } catch (err) {
+    throw new Error(`Encryption failed: ${(err as Error).message}`);
+  }
 };
 
-
 export const decryptPrivateKey = (encrypted: Buffer, password: string): Uint8Array => {
-try {
-    if (encrypted.length < 32) {
-        consola.error('Invalid encrypted data format');
-        process.exit(1);
+  try {
+
+    const saltLen = SCRYPT_CONFIG.saltLen;
+    const ivLen = 12; 
+    const tagLen = 16;
+    const minLength = saltLen + ivLen + tagLen;
+
+    if (encrypted.length < minLength) {
+      throw new Error('Invalid encrypted data format');
     }
 
-    const salt = encrypted.subarray(0, 16);
-    const iv = encrypted.subarray(16, 32);
-    const ciphertext = encrypted.subarray(32);
-    const key = crypto.scryptSync(password, salt, SCRYPT_CONFIG.keyLen, SCRYPT_CONFIG.params);
+    let offset = 0;
+    const salt = encrypted.subarray(offset, offset += saltLen);
+    const iv = encrypted.subarray(offset, offset += ivLen);
+    const tag = encrypted.subarray(offset, offset += tagLen);
+    const ciphertext = encrypted.subarray(offset);
 
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    const key = crypto.scryptSync(password, salt, SCRYPT_CONFIG.keyLen, SCRYPT_CONFIG.params);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(tag);
+
     return new Uint8Array(Buffer.concat([
       decipher.update(ciphertext),
       decipher.final()
     ]));
-} catch (error: unknown) {
-    const isErrLike = (e: unknown): e is { message?: string; code?: string } =>
-      typeof e === 'object' && e !== null && ('message' in e || 'code' in e);
-
-    if (isErrLike(error) && (error.message?.includes('bad decrypt') || error.code === 'ERR_OSSL_EVP_BAD_DECRYPT')) {
-        consola.error('Incorrect password');
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : null;
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'ERR_CRYPTO_OPERATION_FAILED' || err?.message.toLowerCase().includes('unsupported state')) {
+      throw new Error('Incorrect password or data');
     }
-
-    if (isErrLike(error) && typeof error.message === 'string') {
-        consola.error('Incorrect password', error);
-    }
-     consola.error('Decryption error', error);
-     process.exit(1);
+    consola.log(`Decryption failure`);
+    throw error;
   }
 };
-
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

@@ -145,7 +145,7 @@ const onSubmit = async () => {
 
     <UPageCard 
       v-if="success"
-      to="/trade"
+      to="/"
       variant="outline"
       class="mt-5"
       :ui="{

@@ -7,7 +7,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "electron-forge start",
+    "start": "ELECTRON_DISABLE_SANDBOX=1 electron-forge start",
     "build:workers": "vite build -c vite.worker.config.ts && vite build -c vite.opworker.config.ts",
     "package": "npm run build:workers && electron-forge package",
     "make": "npm run build:workers && electron-forge make",

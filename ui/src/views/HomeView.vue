@@ -7,10 +7,12 @@ import { useGetPostions } from '@/composables/getPostions';
 import SubWalletsTable from '@/components/Tables/SubWalletsTable.vue';
 import PostionsTable from '@/components/Tables/PostionsTable.vue';
 import OffensiveSpinner from '@/components/OffensiveSpinner.vue';
+import { useRouter } from 'vue-router';
 
 const { error: walletsError, loading: walletsLoading, getAll: getAllWallets, wallets } = useGetWallets();
 const { error: postionsError, loading: postionsLoading, getAll: getAllPostions, data: positions } = useGetPostions();
 
+const router = useRouter();
 
 const retry = async () => {
     await getAllWallets();
@@ -107,10 +109,10 @@ const totalSolInSubs = computed(() => (
               variant="subtle"
               :actions="[
                 {
-                  label: 'Add password',
+                  label: 'Update password',
                   color: 'warning',
                   variant: 'subtle',
-                  onClick: () => retry()
+                  onClick: () => void router.replace('/password')
                 },
                 {
                   label: 'Retry',

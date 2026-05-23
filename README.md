@@ -44,21 +44,24 @@ The Electron app spawns two isolated child processes using
 All private keys and the Jupiter API key are encrypted before being written
 to the local SQLite database. The encryption scheme:
 
-| Parameter        | Value                                    |
-| ---------------- | ---------------------------------------- |
-| KDF              | `crypto.scryptSync`                      |
-| Scrypt N         | 16384                                    |
-| Scrypt r         | 8                                        |
-| Scrypt p         | 1                                        |
-| Derived key size | 32 bytes                                 |
-| Cipher           | AES-256-CBC                              |
-| Salt             | 16 bytes (random per encryption)         |
-| IV               | 16 bytes (random per encryption)         |
-| Storage layout   | `salt (16B) || iv (16B) || ciphertext`   |
+| Parameter        | Value                                                |
+| ---------------- | ---------------------------------------------------- |
+| KDF              | `crypto.scryptSync`                                  |
+| Scrypt N         | 16384                                                |
+| Scrypt r         | 8                                                    |
+| Scrypt p         | 1                                                    |
+| Derived key size | 32 bytes                                             |
+| Cipher           | AES-256-GCM (authenticated encryption)               |
+| Salt             | 32 bytes (random per encryption)                     |
+| IV               | 12 bytes (random per encryption)                     |
+| Auth tag         | 16 bytes (GCM integrity tag)                         |
+| Storage layout   | `salt (32B) \|\| iv (12B) \|\| tag (16B) \|\| ciphertext` |
 
 The encrypted payload is stored as a BLOB in the `api_rpc` and `private_key_encrypted`
 column. Each encryption call generates a fresh salt and IV, so encrypting
-the same key twice produces different ciphertexts.
+the same key twice produces different ciphertexts. The GCM authentication
+tag ensures that tampered or corrupted ciphertext is detected immediately
+during decryption, rather than silently producing garbage bytes.
 
 In the desktop app, your master password is encrypted in memory using
 Electron's `safeStorage` API, which delegates to the operating system's
@@ -269,7 +272,7 @@ solana-bots-linux
 
 - **Local data** You must keep and protect your wallets.db database at all cost when there is funds in the sub-wallets. loosing it, will results in all your funds in them to be loss forever.
 
-- **Password** Your password cannot be recovered. It is used with AES-256-CBC to encrypt your keys. Losing your password while you still have funds in your wallets will prevent you from accessing them ever again.
+- **Password** Your password cannot be recovered. It is used with AES-256-GCM to encrypt your keys. Losing your password while you still have funds in your wallets will prevent you from accessing them ever again.
 
 - **No Code Signing** Your operating system may flag this software as a virus/malware
 
@@ -296,7 +299,7 @@ sub-wallets, you will permanently lose access to those funds. Always drain
 your sub-wallets back to your main wallet before making system changes or
 if you risk forgetting your credentials.
 
-This software uses cryptography technologies (AES-256-CBC and Scrypt) to secure private 
+This software uses cryptography technologies (AES-256-GCM and Scrypt) to secure private 
 keys. The use, import, or export of strong encryption software is heavily 
 restricted, regulated, or outright illegal in certain countries and 
 jurisdictions. It is your sole responsibility to verify and comply with the 

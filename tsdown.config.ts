@@ -1,8 +1,4 @@
-// @ts-ignore
-import path from 'node:path';
-import { defineConfig, type UserConfig } from 'tsdown';
-// @ts-ignore
-const projectRoot = import.meta.dirname;
+import { defineConfig} from 'tsdown';
 
 export default defineConfig([
    {
