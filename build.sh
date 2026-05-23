@@ -51,7 +51,6 @@ cd ui
 rm -rf out .vite
 npm run make
 
-DEBUG=electron-windows-installer* npx electron-forge make --platform=win32 --arch=x64 --targets=@electron-forge/maker-squirrel
 cd ..
 echo "Organizing platform installers to build/ui/..."
 
