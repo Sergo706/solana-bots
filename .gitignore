@@ -99,7 +99,7 @@ auto-imports.d.ts
 components.d.ts
 # Sveltekit cache directory
 .svelte-kit/
-build/
+
 !ui/build/icons/
 !ui/build/icons/*
 Output/
