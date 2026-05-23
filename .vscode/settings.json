@@ -1,5 +1,16 @@
 {
     "cSpell.words": [
         "Butifeul"
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "eslint.workingDirectories": [
+        "./web"
+    ],
+    "eslint.validate": [
+        "javascript",
+        "typescript",
+        "vue"
     ]
 }

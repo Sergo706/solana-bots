@@ -1,0 +1,167 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+
+@media screen and (width < 1024px) {
+
+  :root,
+  html,
+  body {
+    overflow-x: hidden !important;
+  }
+}
+
+@theme static {
+  --color-riavzon-50: #FAF9F8;
+  --color-riavzon-100: #F4F2F0;
+  --color-riavzon-200: #E8E5E1;
+  --color-riavzon-300: #D4CFC9;
+  --color-riavzon-400: #A19A93;
+  --color-riavzon-500: #736B64;
+  --color-riavzon-600: #504A45;
+  --color-riavzon-700: #292524;
+  --color-riavzon-800: #1C1917;
+  --color-riavzon-900: #12100E;
+  --color-riavzon-950: #0A0908;
+
+  --color-cream-50: #FFFDF7;
+  --color-cream-100: #FFF9EB;
+  --color-cream-200: #FFF3D6;
+  --color-cream-300: #FFE8B8;
+  --color-cream-400: #FFD88A;
+  --color-cream-500: #F5C864;
+  --color-cream-600: #D4A843;
+  --color-cream-700: #A37F2F;
+  --color-cream-800: #72581F;
+  --color-cream-900: #4A3814;
+  --color-cream-950: #2A1F0A;
+
+  --color-accent-50: #FFFBEB;
+  --color-accent-100: #FEF3C7;
+  --color-accent-200: #FDE68A;
+  --color-accent-300: #FCD34D;
+  --color-accent-400: #FBBF24;
+  --color-accent-500: #F59E0B;
+  --color-accent-600: #D97706;
+  --color-accent-700: #B45309;
+  --color-accent-800: #92400E;
+  --color-accent-900: #78350F;
+  --color-accent-950: #451A03;
+}
+
+:root.dark {
+  --color-riavzon-50: #fafafa;
+  --color-riavzon-100: #f5f5f5;
+  --color-riavzon-200: #e5e5e5;
+  --color-riavzon-300: #d4d4d4;
+  --color-riavzon-400: #a3a3a3;
+  --color-riavzon-500: #737373;
+  --color-riavzon-600: #525252;
+  --color-riavzon-700: #404040;
+  --color-riavzon-800: #262626;
+  --color-riavzon-900: #171717;
+  --color-riavzon-950: #090909;
+  --ui-bg: var(--color-riavzon-950);
+  --ui-bg-muted: var(--color-riavzon-900);
+  --ui-bg-elevated: var(--color-riavzon-800);
+  --ui-bg-accented: var(--color-riavzon-700);
+  --ui-border: var(--color-riavzon-800);
+  --ui-border-muted: var(--color-riavzon-700);
+  --ui-border-accented: var(--color-riavzon-700);
+  --ui-text-dimmed: var(--color-riavzon-400);
+  --ui-text-muted: var(--color-riavzon-300);
+  --ui-text-toned: var(--color-riavzon-200);
+}
+
+body,
+footer {
+  @apply bg-cream-50 text-riavzon-700 antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+.dark body,
+.dark footer {
+  @apply bg-riavzon-950 text-white/75;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  @apply font-semibold text-riavzon-700;
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4 {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+hr {
+  @apply border-riavzon-200;
+}
+
+.dark hr {
+  @apply border-white/10;
+}
+
+a:not([class]) {
+  @apply text-accent-600 hover:text-accent-500 transition-colors;
+}
+
+.dark a:not([class]) {
+  @apply text-accent-400 hover:text-accent-300;
+}
+
+pre {
+  @apply !bg-cream-100 !border-riavzon-300;
+}
+
+.dark pre {
+  @apply !bg-riavzon-900 !border-white/5;
+}
+
+code:not(pre code) {
+  @apply bg-riavzon-100 text-accent-700;
+}
+
+.dark code:not(pre code) {
+  @apply bg-white/5 text-accent-400;
+}
+
+.glass {
+  @apply bg-cream-50/80 backdrop-blur-2xl border border-riavzon-200 rounded-2xl;
+}
+
+.dark .glass {
+  @apply bg-riavzon-900/30 border-white/10;
+}
+
+:root {
+  --ui-border: var(--color-riavzon-300);
+  --ui-bg-elevated: var(--color-cream-100);
+}
+
+@utility absolute-center {
+  position: absolute;
+  transform: translate(-50%, 50%);
+  top: 50%;
+  left: 50%;
+}
+
+[class*="[counter-reset:step]"] h2::before,
+[class*="[counter-reset:step]"] h3::before,
+[class*="[counter-reset:step]"] h4::before {
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--ui-text-highlighted, inherit);
+}
+
+.dark [class*="[counter-reset:step]"] h2::before,
+.dark [class*="[counter-reset:step]"] h3::before,
+.dark [class*="[counter-reset:step]"] h4::before {
+  color: white !important;
+}

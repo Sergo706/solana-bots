@@ -1,0 +1,153 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+<script setup lang="ts">
+import type { ContentNavigationItem, DocsCollectionItem } from '@nuxt/content';
+import { parsePath } from 'ufo';
+
+const route = useRoute();
+
+const baseNavPath = computed(() => {
+  const parts = parsePath(route.path).pathname.split('/');
+  return parts.slice(0, 3).join('/');
+});
+
+const sidebarDocsNavigation = inject<Ref<ContentNavigationItem[]>>('sidebar_docs_navigation');
+const navData = inject<Ref<NavigationCollection>>('navLinks');
+
+const docsCategory = computed(() => {
+  return navData?.value.links.find(l => l.label === 'Docs');
+});
+
+const pathLink = computed(() => {
+  const category = docsCategory.value;
+  if (category && 'children' in category && Array.isArray(category.children)) {
+    const children = category.children;
+    const activeNavItem = children.find(child => child.to === baseNavPath.value);
+
+    return {
+      navPath: baseNavPath.value,
+      gitHubLink: activeNavItem?.github ?? 'https://github.com/Sergo706/solana-bots',
+      headLine: activeNavItem?.label ?? 'Overview',
+    };
+  }
+
+  return {
+    navPath: baseNavPath.value,
+    gitHubLink: 'https://github.com/Sergo706/solana-bots',
+    headLine: 'Overview',
+  };
+});
+
+const { data: pageData } = await useAsyncData<DocsCollectionItem | null>(
+  `${route.path}_page`,
+  () => queryCollection('docs').path(route.path).first(),
+  { watch: [() => route.path] }
+);
+
+const { data: surroundData } = await useAsyncData<ContentNavigationItem[]>(
+  `${route.path}_surround`,
+  () => queryCollectionItemSurroundings('docs', route.path)
+    .where('path', 'LIKE', `%${pathLink.value.navPath}%`),
+  { watch: [() => route.path] }
+);
+
+const navigation = computed<ContentNavigationItem[]>(() => {
+  const navArray: ContentNavigationItem[] | undefined = sidebarDocsNavigation?.value;
+  if (!navArray || navArray.length === 0) return [];
+
+  const items: ContentNavigationItem[] = navArray[0]?.children ?? navArray;
+
+  const firstItem: ContentNavigationItem | undefined = items[0];
+  const firstItemChildren: ContentNavigationItem[] | undefined = firstItem?.children;
+
+  if (firstItem && firstItemChildren && firstItemChildren.length > 0) {
+    const firstChild: ContentNavigationItem | undefined = firstItemChildren[0];
+
+    if (firstChild) {
+      const overviewChild: ContentNavigationItem = {
+        ...firstChild,
+        title: 'Overview',
+        path: firstChild.path
+      };
+
+      const modifiedFirstItem: ContentNavigationItem = {
+        ...firstItem,
+        title: firstItem.title,
+        path: firstItem.path,
+        children: [
+          overviewChild,
+          ...firstItemChildren.slice(1)
+        ]
+      };
+
+      return [
+        modifiedFirstItem,
+        ...items.slice(1)
+      ];
+    }
+  }
+
+  return items;
+});
+
+const page = computed(() => pageData.value ?? null);
+const surround = computed(() => {
+  const raw = surroundData.value;
+  if (!raw) return [];
+  return Array.isArray(raw) ? raw : [raw];
+});
+
+
+</script>
+
+<template>
+  <UContainer class="max-w-[95rem]">
+    <UPage
+      v-if="page"
+      as="article"
+      class="[--ui-header-height:64px] lg:[--ui-header-height:112px]"
+    >
+      <template #left>
+        <UPageAside :key="route.path">
+          <UContentNavigation
+            variant="link"
+            highlight
+            :navigation="navigation"
+          />
+        </UPageAside>
+      </template>
+
+      <UPageHeader
+        :title="page.title"
+        :description="page.description"
+      >
+        <template #headline>
+          <div class="flex-col items-center gap-1">
+            {{ pathLink.headLine }}
+            <LayoutBreadCrumbs />
+          </div>
+        </template>
+        <template #links>
+          <LayoutActionsDropdown
+            :content="page?.rawbody || page?.description || ''"
+            :md-url="`https://raw.githubusercontent.com/Sergo706/solana-bots/main/web/content/${page?.stem ?? ''}.md`"
+          />
+        </template>
+      </UPageHeader>
+
+      <UPageBody as="section">
+        <slot />
+
+        <USeparator v-if="surround.length > 0" />
+
+        <UContentSurround :surround="surround" />
+      </UPageBody>
+
+      <template #right>
+        <UContentToc
+          highlight
+          :links="page.body?.toc?.links"
+        />
+      </template>
+    </UPage>
+  </UContainer>
+</template>

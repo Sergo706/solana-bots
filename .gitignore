@@ -126,6 +126,12 @@ live.txt
 
 # TernJS port file
 .tern-port
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test

@@ -1,0 +1,72 @@
+import { defineContentConfig, defineCollection, z } from '@nuxt/content'
+import { NavigationCollectionSchema } from './shared/types/Navigation'
+
+export default defineContentConfig({
+  collections: {
+
+    docs: defineCollection({
+      type: 'page',
+      source: {
+        include: 'docs/**',
+        exclude: ['blog/**', 'index.md']
+      },
+      schema: z.object({
+        icon: z.string().optional(),
+        module: z.string().optional(),
+        rawbody: z.string().optional()
+      }),
+    }),
+
+    landing: defineCollection({
+      type: 'page',
+      source: {
+        include: '*.md',
+        exclude: ['blog/**', 'docs/**', 'legal/**']
+      },
+    }),
+
+    legal: defineCollection({
+      type: 'page',
+      source: {
+        include: 'legal/**',
+        exclude: ['blog/**', 'docs/**', '*.md']
+      },
+      schema: z.object({
+        type: z.enum(['security', 'disclaimer']),
+        date: z.date()
+      })
+    }),
+
+    blog_landing: defineCollection({
+      type: 'page',
+      source: 'blog/index.md',
+    }),
+
+    blog: defineCollection({
+      type: 'page',
+      source: {
+        include: 'blog/posts/**',
+        prefix: '/blog'
+      },
+      schema: z.object({
+        icon: z.string().optional(),
+        tags: z.array(z.string()),
+        image: z.string(),
+        author: z.string(),
+        authorImg: z.string(),
+        authorGithub: z.string(),
+        authorGithubUserName: z.string(),
+        featured: z.boolean(),
+        date: z.date(),
+        readingTime: z.string(),
+        rawbody: z.string().optional()
+      })
+    }),
+
+    navigationMenu: defineCollection({
+      type: 'data',
+      source: 'navigation.json',
+      schema: NavigationCollectionSchema
+    })
+  },
+})
