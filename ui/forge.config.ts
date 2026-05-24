@@ -1,5 +1,4 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
-import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
@@ -42,14 +41,6 @@ const config: ForgeConfig = {
     force: true,
   },
   makers: [
-    new MakerSquirrel({
-      authors: 'Sergey Riavzon',
-      description: 'Solana Trading Terminal and Bot Manager',
-      name: 'SolanaBots',
-      setupIcon: './build/icons/icon.ico', 
-      version: '1.0.0',
-    }),
-
     new MakerZIP({}, ['darwin']),
     new MakerRpm({
       options: {

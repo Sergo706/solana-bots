@@ -36,32 +36,19 @@ echo "Wiping old build directory for a clean slate..."
 rm -rf build
 mkdir -p build/cli build/ui
 
-chmod -R 777 build
-
 echo "Building CLI..."
 export CLI_BUILD=1
 npm run build
-chmod -R 777 build
-docker run --rm -v "$PWD":/work -w /work amake/innosetup /DAppVersion="${NEW_VERSION}" /O"build/cli/windows-installer-${VERSION_STR}" installer.iss
-
 export CLI_BUILD=0
 
-echo "Building UI..."
+echo "Building Linux UI..."
 cd ui
 rm -rf out .vite
 npm run make
-
 cd ..
-echo "Organizing platform installers to build/ui/..."
 
+echo "Organizing Linux installers to build/ui/..."
 if [ -d "ui/out/make" ]; then
-    if [ -d "ui/out/make/squirrel.windows/x64" ]; then
-        TARGET_DIR="build/ui/win32-x64-${VERSION_STR}"
-        mkdir -p "$TARGET_DIR"
-        mv ui/out/make/squirrel.windows/x64/* "$TARGET_DIR/"
-        echo "Moved Windows installer to $TARGET_DIR"
-    fi
-
     if [ -d "ui/out/make/deb/x64" ]; then
         TARGET_DIR="build/ui/deb-x64-${VERSION_STR}"
         mkdir -p "$TARGET_DIR"
@@ -77,6 +64,16 @@ if [ -d "ui/out/make" ]; then
     fi
 else
     echo "Warning: ui/out/make directory not found!"
+fi
+
+if [ -d "ui/out/Solana Bots-win32-x64" ]; then
+    echo "Found Windows UI package, building combined Inno Setup installer..."
+    docker run --rm -v "$PWD":/work -w /work amake/innosetup \
+        /DAppVersion="${NEW_VERSION}" \
+        /O"build/windows-installer-${VERSION_STR}" installer.iss
+else
+    echo "Skipping Windows Inno Setup installer"
+    echo "The Windows installer is built on the Windows CI runner."
 fi
 
 rm -rf ui/out ui/.vite ui/dist-worker dist

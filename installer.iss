@@ -1,22 +1,49 @@
 [Setup]
-AppName=Solana Bot
+AppName=Solana Bots
 AppVersion=1.0
-DefaultDirName={autopf}\SolanaBot
-DefaultGroupName=Solana Bot
-OutputBaseFilename=SolanaBotInstaller
+AppPublisher=Sergey Riavzon
+AppPublisherURL=https://riavzon.com
+AppCopyright=Copyright (C) 2026 Sergey Riavzon.
+DefaultDirName={autopf}\SolanaBots
+DefaultGroupName=Solana Bots
+OutputBaseFilename=SolanaBotsInstaller
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=admin
 Uninstallable=yes
+AlwaysShowDirOnReadyPage=yes
+
+
+SetupIconFile=ui\build\icons\icon.ico
+UninstallDisplayIcon={app}\solana-bots.exe
+LicenseFile=LICENSE
+
+
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
+
+
+CloseApplications=yes
+RestartApplications=yes
+ChangesEnvironment=yes
+
+
+WizardStyle=modern
+DisableWelcomePage=no
 
 [Files]
-Source: "build\cli\solana-bots-win.exe"; DestDir: "{app}"; DestName: "solana-bots.exe"; Flags: ignoreversion
+
+Source: "ui\out\Solana Bots-win32-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "build\cli\solana-bots-win.exe"; DestDir: "{app}\cli"; DestName: "solana-bots.exe"; Flags: ignoreversion
 Source: "build\migrations\*"; DestDir: "{app}\migrations"; Flags: ignoreversion recursesubdirs
 
 [Icons]
-Name: "{group}\Solana Bot"; Filename: "{app}\solana-bots.exe"; WorkingDir: "{app}"
-Name: "{commondesktop}\Solana Bot"; Filename: "{app}\solana-bots.exe"; WorkingDir: "{app}"
+Name: "{group}\Solana Bots"; Filename: "{app}\solana-bots.exe"; WorkingDir: "{app}"; IconFilename: "{app}\solana-bots.exe"
+Name: "{commondesktop}\Solana Bots"; Filename: "{app}\solana-bots.exe"; WorkingDir: "{app}"; IconFilename: "{app}\solana-bots.exe"
 
+[UninstallDelete]
+Type: filesandordirs; Name: "{app}"
+Type: filesandordirs; Name: "{userappdata}\Solana Bots"
 
 [Code]
 const
@@ -40,7 +67,7 @@ var
     NewPath: String;
     AppPath: String;
 begin
-    AppPath := ExpandConstant('{app}');
+    AppPath := ExpandConstant('{app}\cli'); 
     if RegQueryStringValue(HKLM, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
     begin
         if Pos(Lowercase(AppPath), Lowercase(OldPath)) = 0 then
@@ -70,7 +97,7 @@ var
 begin
     if CurUninstallStep = usPostUninstall then
     begin
-        sAppPath := ExpandConstant('{app}');
+        sAppPath := ExpandConstant('{app}\cli'); 
         if RegQueryStringValue(HKLM, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', sCurrent) then
         begin
             sCurLower := Lowercase(sCurrent);

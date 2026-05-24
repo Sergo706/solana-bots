@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION_STR }}
+      new_version: ${{ steps.version.outputs.NEW_VERSION }}
     steps:
       - uses: actions/checkout@v4
 
@@ -52,15 +53,18 @@ jobs:
         id: version
         run: |
           VERSION_STR=$(ls -d build/ui/*/ 2>/dev/null | grep -oE 'V[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
-          echo "VERSION_STR=${VERSION_STR:-V1.0.0}" >> "$GITHUB_OUTPUT"
+          VERSION_STR="${VERSION_STR:-V1.0.0}"
+          NEW_VERSION="${VERSION_STR#V}"
+          echo "VERSION_STR=${VERSION_STR}" >> "$GITHUB_OUTPUT"
+          echo "NEW_VERSION=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload build artifacts
+      - name: Upload Linux build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: build/
 
-  build-ui-windows:
+  build-windows:
     runs-on: windows-latest
     needs: build-linux
     steps:
@@ -70,8 +74,15 @@ jobs:
         with:
           node-version: 22
 
+      - uses: oven-sh/setup-bun@v2
+
       - name: Install root dependencies
         run: npm ci
+
+      - name: Build CLI
+        run: npm run build
+        env:
+          CLI_BUILD: '1'
 
       - name: Install UI dependencies
         working-directory: ui
@@ -81,27 +92,27 @@ jobs:
         working-directory: ui
         run: npm run build:workers
 
-      - name: Make Windows installer
+      - name: Package Windows UI
         working-directory: ui
-        run: npx electron-forge make --platform=win32 --arch=x64 --targets=@electron-forge/maker-squirrel
-        env:
-          DEBUG: 'electron-windows-installer*'
+        run: npx electron-forge package --platform=win32 --arch=x64
 
-      - name: Collect Windows artifacts
-        shell: bash
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build Inno Setup installer
+        shell: cmd
         run: |
-          VERSION_STR="${{ needs.build-linux.outputs.version }}"
-          mkdir -p build/ui/win32-x64-${VERSION_STR}
-          cp -r ui/out/make/squirrel.windows/x64/* build/ui/win32-x64-${VERSION_STR}/ || true
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppVersion="${{ needs.build-linux.outputs.new_version }}" /O"build\windows-installer-${{ needs.build-linux.outputs.version }}" installer.iss
 
-      - name: Upload Windows UI artifacts
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: build/
+          path: build/windows-installer-*/
 
   upload:
-    needs: [build-linux, build-ui-windows]
+    needs: [build-linux, build-windows]
     if: ${{ !inputs.skip_upload }}
     runs-on: ubuntu-latest
     steps:
@@ -115,12 +126,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: windows-build
-          path: build-win/
+          path: build/
 
-      - name: Merge artifacts
-        run: |
-          cp -rn build-win/* build/ || true
-          ls -laR build/
+      - name: List final artifacts
+        run: ls -laR build/
 
       - name: Upload to R2
         env:
