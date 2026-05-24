@@ -19,9 +19,9 @@ UninstallDisplayIcon={app}\solana-bots.exe
 LicenseFile=LICENSE
 
 
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
-
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+UsedUserAreasWarning=no
 
 CloseApplications=yes
 RestartApplications=yes
