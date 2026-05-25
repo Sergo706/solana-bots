@@ -23,7 +23,6 @@ const links = ref<ButtonProps[]>([
     to: '/docs',
   }
 ]);
-// TODO API DOWNLOAD
 </script>
 
 <template>

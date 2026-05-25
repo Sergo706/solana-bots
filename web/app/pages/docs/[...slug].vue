@@ -33,7 +33,6 @@ useSchemaOrg([
 ]);
 
 if (import.meta.server) {
-  // @ts-expect-error error with the module
   defineOgImage('Image', {
     title: page.value.title,
     description: page.value.description,

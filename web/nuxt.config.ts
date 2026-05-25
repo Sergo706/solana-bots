@@ -49,10 +49,6 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     exeVersion: '',
-    r2AccessKeyId: '',
-    r2AccountId: '',
-    r2SecretAccessKey: '',
-    r2Bucket: ''
   },
   app: {
     head: {

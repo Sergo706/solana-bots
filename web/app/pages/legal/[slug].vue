@@ -28,7 +28,6 @@ if (pageType.value !== 'disclaimer' && pageType.value !== 'security') throw crea
 
 
 if (import.meta.server) {
-  // @ts-expect-error error with the module
     defineOgImage('Image', {
         title: page.value.title,
         description: page.value.description,

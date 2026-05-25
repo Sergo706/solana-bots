@@ -13,17 +13,20 @@ const { data: page } = await useAsyncData(`${route.path}_page`, () => {
 if (!page.value) {
   throw createError({ statusCode: 404, statusMessage: 'Post not found', fatal: true });
 }
-const links = computed<PageLink[]>(() => [{
-  icon: 'i-lucide-file-pen',
-  label: 'Edit this article',
-  to: `https://github.com/Sergo706/solana-bots/edit/main/web/content/${page.value?.stem ?? ''}.md`,
-  target: '_blank'
-}, {
-  icon: 'i-lucide-star',
-  label: 'Star on GitHub',
-  to: 'https://github.com/Sergo706/solana-bots',
-  target: '_blank'
-}]);
+const links = computed<PageLink[]>(() => {
+  const filePath = page.value?.stem.replace(/^blog\//, 'blog/posts/') ?? '';
+  return [{
+    icon: 'i-lucide-file-pen',
+    label: 'Edit this article',
+    to: `https://github.com/Sergo706/solana-bots/edit/main/web/content/${filePath}.md`,
+    target: '_blank'
+  }, {
+    icon: 'i-lucide-star',
+    label: 'Star on GitHub',
+    to: 'https://github.com/Sergo706/solana-bots',
+    target: '_blank'
+  }];
+});
 </script>
 
 <template>
