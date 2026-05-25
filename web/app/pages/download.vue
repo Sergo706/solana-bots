@@ -31,11 +31,20 @@ if (import.meta.server) {
   });
 }
 
-const trackDownload = (label?: string, url?: string) => {
+const trackDownload = (event: MouseEvent, label?: string, url?: string) => {
+  event.preventDefault(); 
+
   useTrackEvent('file_download', {
     file_name: label,
-    file_url: url
+    file_url: url,
+    transport_type: 'beacon',
   });
+
+  if (url) {
+    setTimeout(() => {
+      window.location.href = url;
+    }, 150);
+  }
 };
 </script>
 
@@ -93,7 +102,7 @@ const trackDownload = (label?: string, url?: string) => {
             :to="undefined"
             :href="link.to"
             external
-            @click="trackDownload(String(link.label), String(link.to))"
+            @click="trackDownload($event, String(link.label), String(link.to))"
           />
         </div>
       </UPageCard>
