@@ -38,6 +38,7 @@ if (import.meta.server) {
     <div class="absolute top-[30%] -right-64 w-[500px] h-[500px] rounded-full bg-emerald-500/20 dark:bg-emerald-500/4 blur-[130px] animate-float-delayed pointer-events-none" />
 
     <div class="absolute top-[15%] left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-amber-500 dark:bg-amber-500/4 blur-[100px] animate-pulse-slow pointer-events-none" />
+    
     <UPageHero
       v-if="page.hero"
       :title="page.title"

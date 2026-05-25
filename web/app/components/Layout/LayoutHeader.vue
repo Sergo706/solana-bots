@@ -22,33 +22,12 @@ const desktopItems = computed<NavigationMenuItem[]>(() => {
 const mobileItems = computed<NavigationMenuItem[]>(() => {
   if (!navLinks?.value.links) return [];
 
-  const items = navLinks.value.links.flatMap((link): NavigationMenuItem[] => {
-    if (link.nested && link.label.startsWith('Docs')) {
-      return link.children.map((child): NavigationMenuItem => ({
-        label: child.label,
-        icon: child.icon,
-        to: child.to,
-      }));
-    }
-
-    const parentItem: NavigationMenuItem = {
-      label: link.label,
-      icon: link.icon,
-      to: link.to,
-      active: link.nested ? route.path.startsWith(link.to) : route.path === link.to,
-    };
-
-    if (link.nested) {
-      const childItems = link.children.map((child): NavigationMenuItem => ({
-        label: child.label,
-        icon: child.icon,
-        to: child.to,
-      }));
-      return [parentItem, ...childItems];
-    }
-    
-    return [parentItem];
-  });
+  const items = navLinks.value.links.map((link): NavigationMenuItem => ({
+    label: link.label,
+    icon: link.icon,
+    to: link.to,
+    active: link.nested ? route.path.startsWith(link.to) : route.path === link.to,
+  }));
 
   items.push({
     label: 'GitHub',

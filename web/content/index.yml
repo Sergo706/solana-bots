@@ -16,7 +16,6 @@ hero:
       to: /download
       size: xl
     - label: Documentation
-      icon: i-lucide-arrow-right
       trailingIcon: i-lucide-arrow-right
       color: primary
       variant: subtle
