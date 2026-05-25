@@ -6,5 +6,5 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineStrictVueConfig({
   rootDir: __dirname,
-  extraIgnores: ['*.config.*']
+  extraIgnores: ['*.config.*', 'dist/**', '.nuxt/**']
 })
