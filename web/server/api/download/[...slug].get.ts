@@ -65,6 +65,8 @@ export default defineEventHandler(async (event) => {
    const getType = keyMap[param as NonNullable<Param>];
 
     console.log('Fetching key:', getType);
+   console.log('Config loaded:', { exeVersion, r2AccountId, r2Bucket, hasAccessKey: !!r2AccessKeyId, hasSecretKey: !!r2SecretAccessKey });
+
     const get = await bucket.getPublicAccess(getType);
     if (!get.ok) {
       console.log('Error getting binary', get.reason);
