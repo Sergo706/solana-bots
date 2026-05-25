@@ -23,6 +23,13 @@ const links = ref<ButtonProps[]>([
     to: '/docs',
   }
 ]);
+
+if (import.meta.server) {
+  defineOgImage('Image', {
+    title: page.value?.pageHeader.title,
+    description: page.value?.pageHeader.description,
+  });
+}
 </script>
 
 <template>

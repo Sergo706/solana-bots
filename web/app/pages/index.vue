@@ -14,7 +14,12 @@ useHead({
     class: 'overflow-x-hidden'
   }
 });
-
+if (import.meta.server) {
+  defineOgImage('Image', {
+    title: page.value?.title,
+    description: page.value?.description,
+  });
+}
 </script>
 
 <template>
