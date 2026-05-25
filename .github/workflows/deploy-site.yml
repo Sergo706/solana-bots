@@ -49,6 +49,8 @@ jobs:
           cache-dependency-path: 'web/package-lock.json'
 
       - name: Install & Build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           npm ci
           npm run build
