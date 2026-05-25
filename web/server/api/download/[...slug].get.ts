@@ -4,10 +4,10 @@ type Param = "windows" | "linux/cli" | "macos/cli" | "linux/ui/deb" | "linux/ui/
 
 export default defineEventHandler(async (event) => {
   const param = event.context.params?.slug as Param;
-  console.log(param)
+  console.log(param);
 
   if (!param) {
-    console.log('no param')
+    console.log('no param');
     throw createError({
       status: 404,
       statusMessage: 'This page doesnt exists',
@@ -28,9 +28,10 @@ export default defineEventHandler(async (event) => {
     });
   }
  
-   const {exeVersion, R2_ACCESS_KEY_ID, R2_ACCOUNT_ID, R2_BUCKET, R2_SECRET_ACCESS_KEY} = useRuntimeConfig(event);
+   const { exeVersion, r2AccessKeyId, r2AccountId, r2SecretAccessKey, r2Bucket } = useRuntimeConfig(event);
+
    
-   if (!exeVersion && !R2_ACCESS_KEY_ID && !R2_ACCOUNT_ID && !R2_BUCKET && !R2_SECRET_ACCESS_KEY) {
+   if (!exeVersion || !r2AccessKeyId || !r2AccountId || !r2Bucket || !r2SecretAccessKey) {
      console.log('Error getting runtime config');
       throw createError({
         status: 500,
@@ -39,10 +40,10 @@ export default defineEventHandler(async (event) => {
    }
 
    const bucket = new Bucket(
-     R2_ACCOUNT_ID, 
-     R2_ACCESS_KEY_ID, 
-     R2_SECRET_ACCESS_KEY, 
-     R2_BUCKET
+     r2AccountId, 
+     r2AccessKeyId, 
+     r2SecretAccessKey, 
+     r2Bucket
    );
 
     // keys references
