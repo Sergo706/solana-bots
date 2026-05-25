@@ -57,6 +57,6 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_ID }}
+          accountId: ${{ secrets.CF_ACC_ID }}
           workingDirectory: web
           command: pages deploy dist --project-name solana-bots-web
