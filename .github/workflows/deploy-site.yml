@@ -6,8 +6,6 @@ on:
       - main
     paths:
       - 'web/**'
-env:
-  NODE_OPTIONS: "--max-old-space-size=8144"
 
 defaults:
   run:
@@ -52,6 +50,7 @@ jobs:
 
       - name: Install & Build
         run: |
+          export NODE_OPTIONS="--max_old_space_size=8144"
           npm ci
           npm run build
 
