@@ -43,14 +43,20 @@ export default defineEventHandler(async (event) => {
      R2_BUCKET
    );
 
-   const baseKey = `releases/${exeVersion}`;
-   
+    // keys references
+// solana-bots/releases/V1.0.0/windows-installer-V1.0.0/SolanaBotsInstaller.exe
+// solana-bots/releases/V1.0.0/cli/solana-bots-macos
+// solana-bots/releases/V1.0.0/cli/solana-bots-linux
+// solana-bots/releases/V1.0.0/ui/deb-x64-V1.0.0/solana-bots_1.0.0_amd64.deb
+// solana-bots/releases/V1.0.0/ui/rpm-x64-V1.0.0/solana-bots-1.0.0-1.x86_64.rpm
+
+
    const keyMap: Record<NonNullable<Param>, string> = {
-     "windows": `${baseKey}/windows-installer-${exeVersion}/SolanaBotsInstaller.exe`,
-     "macos/cli": `${baseKey}/cli/solana-bots-macos`,
-     "linux/cli": `${baseKey}/cli/solana-bots-linux`,
-     "linux/ui/deb": `${baseKey}/ui/deb-x64-${exeVersion}/solana-bots_${exeVersion}_amd64.deb`,
-     "linux/ui/rpm": `${baseKey}/ui/rpm-x64-${exeVersion}/solana-bots-${exeVersion}-1.x86_64.rpm`
+     "windows": `releases/V${exeVersion}/windows-installer-V${exeVersion}/SolanaBotsInstaller.exe`,
+     "macos/cli": `releases/V${exeVersion}/cli/solana-bots-macos`,
+     "linux/cli": `releases/V${exeVersion}/cli/solana-bots-linux`,
+     "linux/ui/deb": `releases/V${exeVersion}/ui/deb-x64-V${exeVersion}/solana-bots_${exeVersion}_amd64.deb`,
+     "linux/ui/rpm": `releases/V${exeVersion}/ui/rpm-x64-V${exeVersion}/solana-bots-${exeVersion}-1.x86_64.rpm`
    };
 
    const getType = keyMap[param as NonNullable<Param>];
@@ -73,4 +79,4 @@ export default defineEventHandler(async (event) => {
     });
 
     return sendStream(event, data.Body as ReadableStream);
-});
+});  
