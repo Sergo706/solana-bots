@@ -6,7 +6,10 @@ export default defineNuxtConfig({
   css: [
     './app/assets/css/index.css'
   ],
-
+  sourcemap: {
+    server: false,
+    client: false
+  },
   icon: {
     customCollections: [
       {
