@@ -1,6 +1,6 @@
 const isDev = process.env.NODE_ENV === 'development'
 export default defineNuxtConfig({
-  modules: ['@nuxt/ui', '@nuxt/content', '@nuxt/image', '@nuxt/fonts', '@nuxt/hints', '@nuxtjs/seo', '@vueuse/nuxt', 'nuxt-feedme', 'nuxt-llms'],
+  modules: ['@nuxt/ui', '@nuxt/content', '@nuxt/image', '@nuxt/fonts', '@nuxt/hints', '@nuxtjs/seo', '@vueuse/nuxt', 'nuxt-feedme', 'nuxt-llms', 'nuxt-gtag'],
   devtools: { enabled: true },
   
   css: [

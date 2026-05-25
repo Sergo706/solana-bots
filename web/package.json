@@ -35,6 +35,7 @@
     "eslint": "9.39.4",
     "eslint-plugin-vue": "10.9.1",
     "nuxt-feedme": "2.1.0",
+    "nuxt-gtag": "^3.0.0",
     "nuxt-llms": "0.2.0",
     "tailwindcss": "4.3.0",
     "typescript-eslint": "8.59.2"

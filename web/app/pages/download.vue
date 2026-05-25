@@ -30,6 +30,13 @@ if (import.meta.server) {
     description: page.value?.pageHeader.description,
   });
 }
+
+const trackDownload = (label?: string, url?: string) => {
+  useTrackEvent('file_download', {
+    file_name: label,
+    file_url: url
+  })
+}
 </script>
 
 <template>
@@ -86,6 +93,7 @@ if (import.meta.server) {
             :to="undefined"
             :href="link.to"
             external
+            @click="trackDownload(String(link.label), String(link.to))"
           />
         </div>
       </UPageCard>
