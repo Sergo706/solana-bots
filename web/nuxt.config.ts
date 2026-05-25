@@ -35,6 +35,9 @@ export default defineNuxtConfig({
         '/': { prerender: true, cache: { maxAge: 60 * 60 * 24 * 30 } },
         '/api/*/**': { prerender: false, cors: true }
   },
+  gtag: {
+    id: 'G-VRQ2G978X6'
+  },
   nitro: {
     prerender: {
       autoSubfolderIndex: false,

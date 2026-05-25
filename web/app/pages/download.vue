@@ -35,8 +35,8 @@ const trackDownload = (label?: string, url?: string) => {
   useTrackEvent('file_download', {
     file_name: label,
     file_url: url
-  })
-}
+  });
+};
 </script>
 
 <template>
