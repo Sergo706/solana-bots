@@ -50,7 +50,7 @@ jobs:
 
       - name: Install & Build
         run: |
-          export NODE_OPTIONS="--max_old_space_size=8144"
+          export NODE_OPTIONS="--max-old-space-size=6144"
           npm ci
           npm run build
 
