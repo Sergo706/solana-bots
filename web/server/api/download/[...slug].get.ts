@@ -3,9 +3,11 @@ import Bucket from "~~/server/utils/s3";
 type Param = "windows" | "linux/cli" | "macos/cli" | "linux/ui/deb" | "linux/ui/rpm" | undefined;
 
 export default defineEventHandler(async (event) => {
-  const param = event.context.params?._ as Param;
+  const param = event.context.params?.slug as Param;
+  console.log(param)
 
   if (!param) {
+    console.log('no param')
     throw createError({
       status: 404,
       statusMessage: 'This page doesnt exists',
