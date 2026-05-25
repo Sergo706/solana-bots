@@ -32,7 +32,8 @@ useSchemaOrg([
 ]);
 
 if (import.meta.server) {
-    defineOgImage('OgImage', {
+  // @ts-expect-error error with the module
+    defineOgImage('Image', {
         title: page.value?.title,
         description: page.value?.description,
     });
@@ -40,7 +41,7 @@ if (import.meta.server) {
 </script>
 
 <template>
-  <SeoMetadata
+  <SeoMetaData
     v-if="page"
     :page="page"
     :is-writing="false"
@@ -64,7 +65,7 @@ if (import.meta.server) {
         variant="subtle" 
         orientation="horizontal"
         :authors="[{ name: posts.featured.author, description: posts.featured.authorGithubUserName, avatar: { src: posts.featured.authorImg, loading: 'lazy' }, to: posts.featured.authorGithub, target: '_blank' }]"
-        :ui="{ header: 'aspect-auto lg:h-full', image: 'object-cover w-full h-full' }" 
+        :ui="{ header: 'aspect-square lg:aspect-square', image: 'object-cover w-full h-full' }" 
       />
             
       <UBlogPost 

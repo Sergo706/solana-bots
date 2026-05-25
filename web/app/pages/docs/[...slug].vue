@@ -33,7 +33,8 @@ useSchemaOrg([
 ]);
 
 if (import.meta.server) {
-  defineOgImage('OgImage', {
+  // @ts-expect-error error with the module
+  defineOgImage('Image', {
     title: page.value.title,
     description: page.value.description,
   });
@@ -43,7 +44,7 @@ if (import.meta.server) {
 
 <template>
   <template v-if="page">
-    <SeoMetadata
+    <SeoMetaData
       :page
       :is-writing="false"
     />

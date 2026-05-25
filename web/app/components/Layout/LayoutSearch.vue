@@ -28,10 +28,23 @@ const groups = [{
 </script>
 
 <template>
-    <UContentSearchButton :collapsed="true" variant="ghost" icon="i-lucide-search" @click="open = true" />
+  <UContentSearchButton
+    :collapsed="true"
+    variant="ghost"
+    icon="i-lucide-search"
+    @click="open = true"
+  />
 
-    <ClientOnly>
-        <LazyUContentSearch v-model:search-term="searchTerm" :files="files" shortcut="meta_k" :navigation="navigation"
-            :fuse="{ resultLimit: 42 }" :loading="status === 'pending'" :groups placeholder="Search documentation..." />
-    </ClientOnly>
+  <ClientOnly>
+    <LazyUContentSearch
+      v-model:search-term="searchTerm"
+      :files="files"
+      shortcut="meta_k"
+      :navigation="navigation"
+      :fuse="{ resultLimit: 42 }"
+      :loading="status === 'pending'"
+      :groups
+      placeholder="Search documentation..."
+    />
+  </ClientOnly>
 </template>

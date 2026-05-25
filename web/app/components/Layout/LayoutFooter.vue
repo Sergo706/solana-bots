@@ -10,17 +10,12 @@ const { data: navLinks } = await useAsyncData<NavigationCollection>('navLinks_fo
 
 
 const items = computed<NavigationMenuItem[]>(() => {
-  if (!navLinks.value?.links) return [];
-
-  const rawLinks = navLinks.value.links;
-  
-  return rawLinks.map((link): NavigationMenuItem => {
+  const mappedLinks = (navLinks.value?.links ?? []).map((link): NavigationMenuItem => {
     if (link.nested) {
       return {
         label: link.label,
         to: link.to,
         active: route.path.startsWith(link.to),
-        target: '_blank',
       };
     }
 
@@ -30,6 +25,20 @@ const items = computed<NavigationMenuItem[]>(() => {
       active: route.path === link.to,
     };
   });
+
+  return [
+    ...mappedLinks,
+    {
+      label: 'Security',
+      to: '/legal/security',
+      active: route.path === '/legal/security',
+    },
+    {
+      label: 'Disclaimer',
+      to: '/legal/disclaimer',
+      active: route.path === '/legal/disclaimer',
+    }
+  ];
 });
 
 </script>
@@ -38,7 +47,7 @@ const items = computed<NavigationMenuItem[]>(() => {
   <UFooter>
     <template #left>
       <p class="text-muted text-sm">
-        Solana Bots © {{ new Date().getFullYear() }}
+        Copyright Solana Bots © {{ new Date().getFullYear() }} All rights reserved
       </p>
     </template>
 

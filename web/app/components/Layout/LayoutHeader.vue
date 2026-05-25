@@ -9,24 +9,6 @@ const route = useRoute();
 const navLinks = inject<Ref<NavigationCollection>>('navLinks');
 const sidebarDocsNavigation = inject<Ref<ContentNavigationItem[]>>('sidebar_docs_navigation');
 
-const moduleLinks = computed(() => {
-  if (!navLinks?.value.links) return [];
-
-  const docsLink = navLinks.value.links.find(link => link.nested && link.to.startsWith('/docs')) as { nested: true, children: NavigationMenuItem[] } | undefined;
-  
-  if (docsLink?.children) {
-    return docsLink.children.map((child: NavigationMenuItem) => ({
-      label: child.label,
-      icon: child.icon as string,
-      to: child.to as string,
-      active: route.path.startsWith(child.to as string)
-    }));
-  }
-  
-  return [];
-});
-
-
 const desktopItems = computed<NavigationMenuItem[]>(() => {
   if (!navLinks?.value.links) return [];
   return navLinks.value.links.map((link): NavigationMenuItem => ({
@@ -91,9 +73,9 @@ const navigation = computed(() => {
   <UHeader class="bg-cream-50/90 backdrop-blur dark:bg-riavzon-950/90">
     <template #title>
       <LayoutLogo 
-      :logo="'/solana-bots.webp'"
-      :size="'sm'"
-      :is-text="true" 
+        :logo="'/solana-bots.webp'"
+        :size="'sm'"
+        :is-text="true" 
       />
     </template>
 
@@ -103,7 +85,7 @@ const navigation = computed(() => {
     />
 
     <template #right>
-
+      <LayoutSearch />
       <ClientOnly>
         <UColorModeButton />
         <template #fallback>
@@ -139,22 +121,6 @@ const navigation = computed(() => {
         :navigation="navigation" 
         :default-open="true"
       />
-    </template>
-    
-    <template
-      v-if="route.path.startsWith('/docs')"
-      #bottom
-    >
-      <div class="!hidden lg:!block bg-cream-50/90 dark:bg-riavzon-950/90 backdrop-blur border-b border-default px-4 sm:px-6">
-        <UContainer class="flex justify-start">
-          <UNavigationMenu 
-            :items="moduleLinks" 
-            variant="link"
-            highlight
-            class="-mb-px" 
-          />
-        </UContainer>
-      </div>
     </template>
   </UHeader>
 </template>

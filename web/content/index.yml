@@ -1,0 +1,139 @@
+title: Trade Smarter, not Harder
+description: A powerful desktop application and CLI for managing multiple wallets, executing mass token swaps, and running volume bots — all with your keys & data staying on your device.
+seo:
+  title: Solana Bots - Trade Smarter, not Harder
+  description: A powerful desktop application and CLI for managing multiple wallets, executing mass token swaps, and running volume bots.
+navigation: false
+hero:
+  badge: v1.0.0 - Self-custodial trading suite
+  image:
+    src: /home.png
+    alt: Solana Bots desktop application showing wallet management dashboard
+    title: Solana Bots — Home
+  links:
+    - label: Download
+      icon: i-lucide-download
+      to: /download
+      size: xl
+    - label: Documentation
+      icon: i-lucide-arrow-right
+      trailingIcon: i-lucide-arrow-right
+      color: primary
+      variant: subtle
+      to: /docs
+      size: xl
+sections:
+  - title: Total Control & Ultimate Privacy
+    description: We believe in a trustless ecosystem. Solana Bots runs entirely locally on your device, ensuring your private keys, strategies, and RPC data are never exposed to external servers.
+    icon: i-lucide-shield-check
+    orientation: horizontal
+    image:
+      src: /wallets.png
+      height: 647
+      alt: Solana Bots Wallets Interface
+      title: Solana Bots — Wallets
+    features:
+      - title: Open Source
+        description: Fully transparent and open-source. You can always verify the code to know exactly what is happening.
+        icon: i-lucide-code-2
+      - title: Self-Custodial Security
+        description: Your private keys are encrypted locally and never leave your machine.
+        icon: i-lucide-shield-check
+      - title: Local Execution
+        description: Runs entirely on your local machine. No tracking, no analytics, and absolutely no telemetry data collection.
+        icon: i-lucide-hard-drive
+      - title: Direct Connection
+        description: Communicate directly with your chosen Solana RPC nodes without relying on any centralized proxy servers.
+        icon: i-lucide-network
+    links:
+      - label: Download
+        to: /download
+        icon: i-lucide-download
+        size: xl
+      - label: View Code
+        to: https://github.com/Sergo706/solana-bots
+        color: primary
+        variant: subtle
+        trailingIcon: i-lucide-github
+        target: _blank
+  - title: Advanced Automation & Execution
+    description: Take your trading to the next level. Generate unlimited wallets, run automated volume bots, and execute high-speed mass token swaps with a single click.
+    icon: i-lucide-activity
+    image:
+      src: /volume-bot.png
+      height: 807
+      alt: Solana Bots Volume Bot Interface
+      title: Solana Bots — Volume Bot
+    features:
+      - title: Wallet Management
+        description: Generate, import, and organize unlimited sub-wallets. Easily distribute SOL, drain tokens, and manage balances across your entire network.
+        icon: i-lucide-wallet
+      - title: Mass Operations
+        description: Execute simultaneous token swaps across dozens of wallets in a single operation to maximize trading speed and efficiency.
+        icon: i-lucide-zap
+      - title: Real-Time Volume Bot
+        description: Automate advanced trading strategies with configurable delays, buy/sell amounts, and precise target volumes.
+        icon: i-lucide-bot
+    links:
+      - label: Download
+        to: /download
+        icon: i-lucide-download
+        size: xl
+      - label: Documentation
+        to: /docs
+        color: primary
+        variant: subtle
+        trailingIcon: i-lucide-arrow-right
+        size: xl
+features:
+  title: Everything you need, nothing you don't
+  description: Discover the powerful features that make Solana Bots the ultimate trading environment.
+  items:
+    - title: Wallet Management
+      description: Instantly create and manage fresh wallets securely on your local device.
+      icon: i-lucide-wallet
+    - title: Trading Terminal
+      description: A powerful, integrated trading dashboard to monitor tokens and execute manual trades.
+      icon: i-lucide-trending-up
+    - title: Position Manager
+      description: Track your active trades, manage entries, and oversee all open positions in one view.
+      icon: i-lucide-layout-list
+      class: rounded-tr-lg!
+    - title: Automated Volume Bot
+      description: Start and configure automated volume bots with precise targets and cycling limits.
+      icon: i-lucide-activity
+    - title: Real-Time Activity Feed
+      description: Monitor your volume bot's actions through a live, streaming activity feed.
+      icon: i-lucide-radio
+    - title: Mass Out
+      description: Rapidly consolidate funds. Mass out SOL and token balances from hundreds of sub-wallets into a master wallet.
+      icon: i-lucide-coins
+    - title: Open Mass Positions
+      description: Instantly execute buy orders across your entire network of wallets simultaneously in a single transaction.
+      icon: i-lucide-layers
+    - title: Sell Mass Positions
+      description: Exit the market rapidly by liquidating open positions from all your active sub-wallets at exactly the same time.
+      icon: i-lucide-arrow-down-to-line
+    - title: Native Desktop App
+      description: Built on Electron to ensure your keys and trading strategies run entirely locally.
+      icon: i-lucide-monitor
+    - title: Powerful CLI
+      description: Prefer the terminal? Every feature of the UI is also shipped as a lightning-fast, fully scriptable Command Line Interface for advanced automation.
+      icon: i-lucide-terminal-square
+      class: sm:col-span-2 lg:col-span-3 rounded-none! rounded-b-lg!
+      orientation: horizontal
+      variant: soft
+cta:
+  title: Ready to take control?
+  description: Download Solana Bots and start trading with confidence. Your keys, your rules.
+  links:
+    - label: Download Now
+      to: /download
+      icon: i-lucide-download
+      size: xl
+    - label: Read the Docs
+      to: /docs
+      color: primary
+      variant: subtle
+      trailingIcon: i-lucide-arrow-right
+      size: xl

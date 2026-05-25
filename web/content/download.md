@@ -1,0 +1,47 @@
+---
+pageHeader:
+  version: "v1.0.0"
+  title: "Download Solana Bots"
+  description: "Get the latest version of the CLI and Desktop app for your platform."
+downloads:
+  title: "Available Platforms"
+  description: "Choose the version that fits your operating system."
+  items:
+    - title: "Windows"
+      description: "Includes both the Desktop Application and the standalone CLI in a single installer."
+      icon: "i-lucide-monitor"
+      links:
+        - label: "Download Installer (.exe)"
+          to: "https://github.com/Sergo706/solana-bots/releases/latest"
+          icon: "i-lucide-download"
+          variant: "solid"
+          color: "primary"
+    - title: "Linux"
+      description: "Available as a .deb or .rpm package, or a standalone CLI."
+      icon: "i-lucide-laptop"
+      links:
+        - label: "Desktop App (.deb)"
+          to: "https://github.com/Sergo706/solana-bots/releases/latest"
+          icon: "i-lucide-download"
+          variant: "solid"
+          color: "primary"
+        - label: "Desktop App (.rpm)"
+          to: "https://github.com/Sergo706/solana-bots/releases/latest"
+          icon: "i-lucide-download"
+          variant: "solid"
+          color: "primary"
+        - label: "CLI Binary"
+          to: "https://github.com/Sergo706/solana-bots/releases/latest"
+          icon: "i-lucide-terminal"
+          variant: "outline"
+          color: "primary"
+    - title: "macOS"
+      description: "Currently available only as a standalone CLI."
+      icon: "i-lucide-apple"
+      links:
+        - label: "CLI Binary"
+          to: "https://github.com/Sergo706/solana-bots/releases/latest"
+          icon: "i-lucide-terminal"
+          variant: "solid"
+          color: "primary"
+---

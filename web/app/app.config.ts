@@ -25,4 +25,7 @@ export default defineAppConfig({
     description: 'A self-custodial CLI and desktop application for managing multiple Solana wallets and executing automated swaps.',
     url: 'https://solana.riavzon.com',
   },
+  profile: {
+    name: 'Solana Bots',
+  },
 });

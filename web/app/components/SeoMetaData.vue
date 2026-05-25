@@ -3,15 +3,6 @@
 import type { BlogCollectionItem, PageCollectionItemBase } from "@nuxt/content";
 import { joinURL } from 'ufo';
 
-interface SeoConfig {
-  title: string;
-  description: string;
-  url: string;
-}
-
-interface ProfileConfig {
-  name: string;
-}
 
 const { page, isWriting, image } = defineProps<{
   page: PageCollectionItemBase | BlogCollectionItem
@@ -22,8 +13,8 @@ const { page, isWriting, image } = defineProps<{
 
 const route = useRoute();
 const appConfig = useAppConfig();
-const seo = appConfig.seo as SeoConfig;
-const profile = appConfig.profile as ProfileConfig;
+const seo = appConfig.seo;
+const profile = appConfig.profile;
 
 const canonicalUrl = joinURL(seo.url, route.path);
 

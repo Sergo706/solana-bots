@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import type { ContentNavigationItem, DocsCollectionItem } from '@nuxt/content';
+import type { PageLink } from '@nuxt/ui';
 import { parsePath } from 'ufo';
 
 const route = useRoute();
@@ -96,6 +97,17 @@ const surround = computed(() => {
   return Array.isArray(raw) ? raw : [raw];
 });
 
+const links = computed<PageLink[]>(() => [{
+  icon: 'i-lucide-file-pen',
+  label: 'Edit this page',
+  to: `https://github.com/Sergo706/solana-bots/edit/main/web/content/${page.value?.stem ?? ''}.md`,
+  target: '_blank'
+}, {
+  icon: 'i-lucide-star',
+  label: 'Star on GitHub',
+  to: pathLink.value.gitHubLink,
+  target: '_blank'
+}]);
 
 </script>
 
@@ -119,11 +131,12 @@ const surround = computed(() => {
       <UPageHeader
         :title="page.title"
         :description="page.description"
+        :icon="page.icon"
       >
         <template #headline>
           <div class="flex-col items-center gap-1">
             {{ pathLink.headLine }}
-            <LayoutBreadCrumbs />
+            <LayoutBreadCumbs />
           </div>
         </template>
         <template #links>
@@ -146,7 +159,16 @@ const surround = computed(() => {
         <UContentToc
           highlight
           :links="page.body?.toc?.links"
-        />
+        > 
+          <template #bottom>
+            <USeparator type="dashed" />
+
+            <UPageLinks
+              title="Github"
+              :links="links"
+            />
+          </template>
+        </UContentToc>
       </template>
     </UPage>
   </UContainer>

@@ -64,7 +64,9 @@ export default defineNuxtConfig({
       ]
     }
   },
-  
+  colorMode: {
+    preference: 'dark'
+  },
   site: {
     url: 'https://solana.riavzon.com/',
     name: 'Solana Bots',

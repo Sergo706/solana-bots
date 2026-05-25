@@ -1,6 +1,8 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 
 <script setup lang="ts">
+import type { PageLink } from '@nuxt/ui';
+
 
 const route = useRoute();
 
@@ -11,7 +13,17 @@ const { data: page } = await useAsyncData(`${route.path}_page`, () => {
 if (!page.value) {
   throw createError({ statusCode: 404, statusMessage: 'Post not found', fatal: true });
 }
-
+const links = computed<PageLink[]>(() => [{
+  icon: 'i-lucide-file-pen',
+  label: 'Edit this article',
+  to: `https://github.com/Sergo706/solana-bots/edit/main/web/content/${page.value?.stem ?? ''}.md`,
+  target: '_blank'
+}, {
+  icon: 'i-lucide-star',
+  label: 'Star on GitHub',
+  to: 'https://github.com/Sergo706/solana-bots',
+  target: '_blank'
+}]);
 </script>
 
 <template>
@@ -49,7 +61,7 @@ if (!page.value) {
                 icon="i-lucide-clock"
               />
             </div>
-            <LayoutBreadCrumbs />
+            <LayoutBreadCumbs />
           </div>
         </template>
         <template #links>
@@ -92,7 +104,16 @@ if (!page.value) {
         <UContentToc
           highlight
           :links="page.body?.toc?.links"
-        /> 
+        > 
+          <template #bottom>
+            <USeparator type="dashed" />
+
+            <UPageLinks
+              title="Github"
+              :links="links"
+            />
+          </template>
+        </UContentToc>
       </template>
     </UPage>
   </UContainer>

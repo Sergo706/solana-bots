@@ -1,0 +1,64 @@
+---
+title: Disclaimer
+description: Legal disclaimer and terms of use for Solana Bots.
+type: disclaimer
+date: 2026-05-25T00:00:00.000Z
+---
+
+
+::caution
+Please read this disclaimer carefully before using Solana Bots.
+::
+
+This software is provided strictly for educational and research purposes. Do not use this application for market manipulation, wash trading, or any other illegal activities. You must ensure your usage complies with all applicable local and international laws.
+
+**Nothing contained within the software constitutes financial, investment, or trading advice.**
+Any advice that may be contained within the software (e.g., the quotes) is strictly a joke and should not be taken seriously.
+
+Additionally, your master password encrypts your local database and **cannot** be recovered. If you lose your password while funds remain in your sub-wallets, you will permanently lose access to those funds. Always drain your sub-wallets back to your main wallet before making system changes or if you risk forgetting your credentials.
+
+## Risks
+
+The developers will not be responsible for any financial losses, damages, or other consequences incurred while using this application. Cryptocurrency trading carries significant risk, and the automated nature of this tool can result in rapid capital loss if misconfigured. Never trade money you cannot afford to lose.
+
+This software uses cryptography technologies (AES-256-GCM and Scrypt) to secure private keys. The use, import, or export of strong encryption software is heavily restricted, regulated, or outright illegal in certain countries and jurisdictions. It is your sole responsibility to verify and comply with the cryptography laws in your country before downloading or using this software.
+
+## Limitations
+
+The software currently has some limitations, which include the following:
+
+- Single Jupiter DEX: All swaps route through Jupiter. There is no fallback to Raydium, Orca, or other DEXes if Jupiter is unavailable or returns unfavorable quotes.
+
+- Local data: You must **keep** and **protect** your *wallets.db* database at all costs when there are funds in the sub-wallets. Losing it will result in all your funds being lost forever.
+
+- Password: Your password cannot be recovered. It is used with AES-256-GCM to encrypt your keys. Losing your password while you still have funds in your wallets will prevent you from accessing them ever again.
+
+- No Code Signing: Your operating system may flag this software as a virus/malware.
+
+- No delete mechanism: You cannot delete sub-wallets easily. If you want to delete a wallet list/group, you need to drain all of their funds first to your main wallet, delete the *wallets.db* database, and start the onboarding process again.
+
+- Not Tested on macOS: The software has only been tested on a Linux (Ubuntu) and a Windows machine.
+
+
+
+## No Warranty or Support
+The software is provided strictly on an "as-is" and "as-available" basis, without warranties of any kind, either express or implied. This includes, but is not limited to, implied warranties of merchantability, fitness for a particular purpose, or non-infringement. There is absolutely no guarantee of uptime, profitability, or bug-free operation. Users assume all responsibility and risk for the use of this software.
+
+## Third-Party Dependencies & Network Risks
+This application relies heavily on third-party infrastructure, including public or private RPC nodes and the underlying Solana blockchain. By using this software, you explicitly accept the risks associated with network congestion, RPC node failures, delayed block times, or changes to decentralized exchange (DEX) APIs. For instance, if the Jupiter API experiences downtime or rate limits your IP address, the bot may fail to execute trades, fail to fetch accurate quotes, or execute trades at highly unfavorable rates due to slippage.
+
+### Taxes and Compliance
+You are entirely responsible for tracking, reporting, and remitting any taxes applicable to your trading activities. This includes, but is not limited to, capital gains taxes, income taxes, or any other financial obligations resulting from the use of this bot in your local jurisdiction. The developers do not provide tax advice and will not generate tax reports on your behalf.
+
+### Smart Contract and Exploit Risks
+The cryptocurrency ecosystem is inherently risky and highly susceptible to malicious activity. This includes hacks, zero-day exploits, flash loan attacks, and smart contract vulnerabilities. The developers of this software are not responsible if a token you trade is maliciously compromised, if liquidity is drained (e.g., a "rug pull"), or if a decentralized exchange contract interacting with your wallets is exploited.
+
+### Non-Custodial
+This software is strictly non-custodial. The developers have absolutely zero access to your funds, your private keys, your encrypted database, or your master password. Because the developers cannot access your local environment, we cannot freeze, recover, refund, or manage your assets under any circumstances. You retain full sovereignty over your keys, which inherently comes with the full responsibility of safeguarding them.
+
+## License
+In addition to the above, the software is licensed under the Apache-2.0 license and is available in the repository hosted on [GitHub](https://github.com/Sergo706/solana-bots/blob/main/LICENSE).
+
+***
+
+**By downloading, installing, or using the Solana Bots software in any means, you explicitly agree that you have read, understood, and accepted all the terms and conditions outlined in this disclaimer.**

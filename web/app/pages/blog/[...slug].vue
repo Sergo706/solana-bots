@@ -50,7 +50,7 @@ useSchemaOrg([
 
 <template>
   <template v-if="page">
-    <SeoMetadata
+    <SeoMetaData
       :page="page"
       :is-writing="true"
       :image="page.image"

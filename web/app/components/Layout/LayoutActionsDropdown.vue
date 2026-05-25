@@ -46,7 +46,7 @@ const items = computed<DropdownMenuItem[]>(() => [
 <template>
   <UFieldGroup size="sm">
     <UButton
-      color="neutral"
+      color="primary"
       variant="subtle"
       label="Copy Page"
       icon="lucide:copy"
@@ -58,7 +58,7 @@ const items = computed<DropdownMenuItem[]>(() => [
       size="sm"
     >
       <UButton
-        color="neutral"
+        color="primary"
         variant="outline"
         icon="i-lucide-chevron-down"
         aria-label="More actions"
