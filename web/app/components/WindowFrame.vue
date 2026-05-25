@@ -18,7 +18,10 @@ defineProps<{
         <span class="w-3 h-3 rounded-full bg-red-500/80" />
         <span class="w-3 h-3 rounded-full bg-amber-500/80" />
         <span class="w-3 h-3 rounded-full bg-emerald-500/80" />
-        <span v-if="title" class="ml-3 text-xs text-neutral-500 font-mono">{{ title }}</span>
+        <span
+          v-if="title"
+          class="ml-3 text-xs text-neutral-500 font-mono"
+        >{{ title }}</span>
       </div>
       
       <NuxtImg

@@ -1,6 +1,6 @@
 const isDev = process.env.NODE_ENV === 'development'
 export default defineNuxtConfig({
-  modules: ['@nuxt/ui', '@nuxt/content', '@nuxt/image', '@nuxt/fonts', '@nuxt/hints', '@nuxtjs/seo', '@vueuse/nuxt', 'nuxt-feedme', 'nuxt-llms', '@nuxtjs/turnstile'],
+  modules: ['@nuxt/ui', '@nuxt/content', '@nuxt/image', '@nuxt/fonts', '@nuxt/hints', '@nuxtjs/seo', '@vueuse/nuxt', 'nuxt-feedme', 'nuxt-llms'],
   devtools: { enabled: true },
   
   css: [
@@ -25,6 +25,10 @@ export default defineNuxtConfig({
     ? {}
     : {
         '/blog/**': { prerender: true, cache: { maxAge: 60 * 60 * 24 * 30 } },
+        '/docs/**': { prerender: true, cache: { maxAge: 60 * 60 * 24 * 30 } },
+        '/legal/**': { prerender: true, cache: { maxAge: 60 * 60 * 24 * 30 } },
+        '/download': { prerender: true, cache: { maxAge: 60 * 60 * 24 * 30 } },
+
         '/': { prerender: true, cache: { maxAge: 60 * 60 * 24 * 30 } },
         '/api/*/**': { prerender: false, cors: true }
   },
@@ -39,6 +43,13 @@ export default defineNuxtConfig({
       deployConfig: true,
       nodeCompat:true
     }
+  },
+  runtimeConfig: {
+    exeVersion: '',
+    R2_ACCOUNT_ID: '',
+    R2_ACCESS_KEY_ID: '',
+    R2_SECRET_ACCESS_KEY: '',
+    R2_BUCKET: ''
   },
   app: {
     head: {
@@ -92,6 +103,18 @@ export default defineNuxtConfig({
         description: 'All private keys and the Jupiter API key are encrypted (AES-256-GCM) before being written to the local SQLite database. The master password is never written to disk. The application operates entirely locally; no data leaves the machine unless explicitly submitted to an RPC endpoint.'
       },
       {
+        title: 'Documentation',
+        description: 'Full Documentation are located at /docs'
+      },
+      {
+        title: 'Blog',
+        description: 'Blogs posts and general guides located at /blog'
+      },
+      {
+        title: 'Download page for users',
+        description: 'Is located at the download page /download'
+      },
+      {
         title: 'Source Code & Downloads',
         description: 'The Solana Bots application is completely open-source and available to be installed on various platforms. You can review the source code on GitHub, or download the pre-compiled binaries and desktop installers directly via the endpoints below.',
         links: [
@@ -111,19 +134,19 @@ export default defineNuxtConfig({
             href: '/api/download/macos/cli'
           },
           {
-            title: 'Download CLI (Windows)',
-            description: 'Command-line executable installer for Windows.',
-            href: '/api/download/windows/cli'
+            title: 'Download Windows',
+            description: 'Includes Both the cli and Desktop App in a single installer',
+            href: '/api/download/windows'
           },
           {
-            title: 'Download Desktop App (Linux)',
-            description: 'Desktop application packages for Linux (Debian/Ubuntu and Fedora).',
-            href: '/api/download/linux/desktop'
+            title: 'Download Desktop App (Linux Debian)',
+            description: 'Standalone command-line binary for Linux debian distributions.',
+            href: '/api/download/linux/ui/deb'
           },
           {
-            title: 'Download Desktop App (Windows)',
-            description: 'Desktop application installer for Windows.',
-            href: '/api/download/windows/desktop'
+            title: 'Download Desktop App (Linux Red hat)',
+            description: 'Standalone command-line binary for Linux RPM distributions.',
+            href: '/api/download/linux/ui/rpm'
           }
         ]
       }
@@ -139,6 +162,11 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2024-04-03',
 
+  linkChecker: {
+    failOnError: false,
+    excludeLinks: ['/api/download/**']
+  },
+  
   ogImage: {
     zeroRuntime: true,
     componentDirs: ['app/components/OgImage']

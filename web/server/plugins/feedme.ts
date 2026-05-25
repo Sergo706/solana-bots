@@ -69,7 +69,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     let length = typeof map.length === 'number' && Number.isFinite(map.length) ? map.length : undefined;
     length ??= FALLBACK_LENGTH;
 
-    return { url: absWithExt.replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, '&amp;'), type, length } as { url: string; type: string; length: number };
+    return { url: absWithExt.replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, '&amp;'), type, length };
   };
 
   const normalizeItem = (opts: { item: ContentItemWrapper<FeedItem> }): void => {

@@ -77,6 +77,9 @@ const links = ref<ButtonProps[]>([
             :key="linkIndex"
             v-bind="link"
             class="justify-center"
+            :to="undefined"
+            :href="link.to"
+            external
           />
         </div>
       </UPageCard>
