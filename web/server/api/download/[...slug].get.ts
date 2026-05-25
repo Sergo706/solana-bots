@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import Bucket from "~~/server/utils/s3";
 type Param = "windows" | "linux/cli" | "macos/cli" | "linux/ui/deb" | "linux/ui/rpm" | undefined;
 
 export default defineEventHandler(async (event) => {
@@ -28,10 +27,10 @@ export default defineEventHandler(async (event) => {
     });
   }
  
-   const { exeVersion, r2AccessKeyId, r2AccountId, r2SecretAccessKey, r2Bucket } = useRuntimeConfig(event);
+   const { exeVersion } = useRuntimeConfig(event);
 
    
-   if (!exeVersion || !r2AccessKeyId || !r2AccountId || !r2Bucket || !r2SecretAccessKey) {
+   if (!exeVersion) {
      console.log('Error getting runtime config');
       throw createError({
         status: 500,
@@ -39,13 +38,20 @@ export default defineEventHandler(async (event) => {
       });
    }
 
-   const bucket = new Bucket(
-     r2AccountId, 
-     r2AccessKeyId, 
-     r2SecretAccessKey, 
-     r2Bucket
-   );
+  interface R2Object {
+    size: number;
+    body: ReadableStream;
+  }
+  interface R2Bucket {
+    get(key: string): Promise<R2Object | null>;
+  }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const bucket = event.context?.cloudflare?.env?.R2_BUCKET as R2Bucket | undefined;
+  if (!bucket) {
+    console.error('R2 binding is not configured');
+    throw createError({ status: 500, statusMessage: 'Server error. please try again later' });
+  }
     // keys references
 // solana-bots/releases/V1.0.0/windows-installer-V1.0.0/SolanaBotsInstaller.exe
 // solana-bots/releases/V1.0.0/cli/solana-bots-macos
@@ -65,23 +71,22 @@ export default defineEventHandler(async (event) => {
    const getType = keyMap[param as NonNullable<Param>];
 
     console.log('Fetching key:', getType);
-   console.log('Config loaded:', { exeVersion, r2AccountId, r2Bucket, hasAccessKey: !!r2AccessKeyId, hasSecretKey: !!r2SecretAccessKey });
+    console.log('Config loaded:', { exeVersion });
 
-    const get = await bucket.getPublicAccess(getType);
-    if (!get.ok) {
-      console.log('Error getting binary', get.reason);
+    const r2Object = await bucket.get(getType);
+    if (!r2Object) {
+      console.log('Error getting binary: Not found');
       throw createError({
-        status: 500,
+        status: 404,
         statusMessage: 'Server error. please try again later',
       });
     }
     
-    const data = get.data;
     setResponseHeaders(event, {
       "Content-Type": "application/octet-stream",
-      "Content-Length": data.ContentLength?.toString() ?? "",
+      "Content-Length": r2Object.size.toString(),
       "Content-Disposition": `attachment; filename="${getType.split('/').pop() ?? 'download'}"`,
     });
 
-    return sendStream(event, data.Body as ReadableStream);
+    return sendStream(event, r2Object.body);
 });  
