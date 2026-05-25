@@ -65,7 +65,7 @@ if (import.meta.server) {
         variant="subtle" 
         orientation="horizontal"
         :authors="[{ name: posts.featured.author, description: posts.featured.authorGithubUserName, avatar: { src: posts.featured.authorImg, loading: 'lazy' }, to: posts.featured.authorGithub, target: '_blank' }]"
-        :ui="{ header: 'aspect-square lg:aspect-square', image: 'object-cover w-full h-full' }" 
+        :ui="{ header: 'aspect-video lg:aspect-video', image: 'object-cover w-full h-full' }" 
       />
             
       <UBlogPost 
