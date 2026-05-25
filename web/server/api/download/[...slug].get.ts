@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
   
     const get = await bucket.getPublicAccess(getType);
     if (!get.ok) {
-      console.log('Error getting binary');
+      console.log('Error getting binary', get.reason);
       throw createError({
         status: 500,
         statusMessage: 'Server error. please try again later',
