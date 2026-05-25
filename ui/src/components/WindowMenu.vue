@@ -54,7 +54,7 @@ const viewItems = ref<DropdownMenuItem[][]>([
     [   
      { label: 'Reload', icon: 'i-lucide-home', onSelect: () => { reload(); }, kbds: ['meta', 'r'] }, 
      { label: 'Zoom', icon: 'i-lucide-zoom-in', onSelect: () => { zoomIn(); }, kbds: ['meta', 'shift', 'z'] },
-     { label: 'Zoom Out', icon: 'i-lucide-zoom-out', onSelect: () => { zoomOut(); }, kbds: ['meta', 'shift', 'o'] },
+     { label: 'Zoom Out', icon: 'i-lucide-zoom-out', onSelect: () => { zoomOut(); }, kbds: ['meta', '-'] },
      { label: 'Reset Zoom', icon: 'i-lucide-search-slash', onSelect: () => { resetZoom(); }, kbds: ['meta', 'shift', 'r'] },
      { label: 'Full Screen', icon: 'i-lucide-search-slash', onSelect: () => { toggleFullScreen(); }, kbds: ['f11'] },
     ],
