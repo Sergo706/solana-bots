@@ -17,10 +17,10 @@ const slug = computed(() =>
 
 const path = computed(() => withLeadingSlash(...slug.value));
 
-const { data: page } = await useAsyncData("legal", async () => {
+const { data: page } = await useAsyncData(`legal-${path.value}`, async () => {
     const data = await queryCollection('legal').path(`/legal${path.value}`).first();
     return data;
-});
+}, { watch: [path] });
 
 if (!page.value) throw createError({ statusCode: 404, statusMessage: 'Page not found' });
 const pageType = computed(() => page.value?.type);

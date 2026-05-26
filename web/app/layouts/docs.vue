@@ -44,10 +44,9 @@ const { data: pageData } = await useAsyncData<DocsCollectionItem | null>(
   { watch: [() => route.path] }
 );
 
-const { data: surroundData } = await useAsyncData<ContentNavigationItem[]>(
+const { data: surroundData } = await useAsyncData(
   `${route.path}_surround`,
-  () => queryCollectionItemSurroundings('docs', route.path)
-    .where('path', 'LIKE', `%${pathLink.value.navPath}%`),
+  () => queryCollectionItemSurroundings('docs', route.path),
   { watch: [() => route.path] }
 );
 
@@ -91,11 +90,7 @@ const navigation = computed<ContentNavigationItem[]>(() => {
 });
 
 const page = computed(() => pageData.value ?? null);
-const surround = computed(() => {
-  const raw = surroundData.value;
-  if (!raw) return [];
-  return Array.isArray(raw) ? raw : [raw];
-});
+const surround = computed(() => surroundData.value ?? []);
 
 const links = computed<PageLink[]>(() => [{
   icon: 'i-lucide-file-pen',

@@ -9,22 +9,16 @@ const { data: navLinks } = await useAsyncData<NavigationCollection>('navLinks_fo
 });
 
 
-const items = computed<NavigationMenuItem[]>(() => {
-  const mappedLinks = (navLinks.value?.links ?? []).map((link): NavigationMenuItem => {
-    if (link.nested) {
-      return {
-        label: link.label,
-        to: link.to,
-        active: route.path.startsWith(link.to),
-      };
-    }
+const excludeFromFooter = new Set(['Home', 'Docs', 'Blog']);
 
-    return {
+const items = computed<NavigationMenuItem[]>(() => {
+  const mappedLinks = (navLinks.value?.links ?? [])
+    .filter(link => !excludeFromFooter.has(link.label))
+    .map((link): NavigationMenuItem => ({
       label: link.label,
       to: link.to,
-      active: route.path === link.to,
-    };
-  });
+      active: link.nested ? route.path.startsWith(link.to) : route.path === link.to,
+    }));
 
   return [
     ...mappedLinks,
