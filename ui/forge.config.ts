@@ -28,7 +28,7 @@ const config: ForgeConfig = {
     ],
     appCategoryType: 'Productivity',
     overwrite: true, 
-    appVersion: '1.0.6',
+    appVersion: '1.0.7',
     appCopyright: 'Solana bots https://riavzon.com - All right reserved',
     darwinDarkModeSupport: true,
     executableName: 'solana-bots',

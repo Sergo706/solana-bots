@@ -64,8 +64,7 @@
     "compile:macos": "bun build src/main.ts --compile --target bun-darwin-x64 --outfile build/cli/solana-bots-macos",
     "compile:all": "npm run compile:linux && npm run compile:windows && npm run compile:macos",
     
-    "build": "npx drizzle-kit generate && cp -r src/db/migrations dist/migrations && npm run compile:all && cp -r dist/migrations build/migrations",
-
+    "build": "tsdown && npx drizzle-kit generate && cp -r src/db/migrations dist/migrations && npm run compile:all && cp -r dist/migrations build/migrations",
     "make-installer": "docker run --rm -v \"$PWD\":/work -w /work amake/innosetup installer.iss",
     "lint": "eslint .",
     "types": "npx tsc --noEmit"
@@ -86,6 +85,7 @@
     "@types/node": "25.6.2",
     "drizzle-kit": "0.31.10",
     "eslint": "10.3.0",
+    "tsdown": "0.22.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.59.2"
   }
