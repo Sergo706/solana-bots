@@ -33,8 +33,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-tags: true
           fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
 
       - uses: actions/setup-node@v4
         with:
