@@ -6,7 +6,7 @@ The project provides wallet generation, fund distribution, mass buy/sell
 operations, and an automated volume bot that cycles buy-sell pairs across
 configurable sub-wallets.
 
-[webites](https://solana.riavzon.com/)
+[website](https://solana.riavzon.com/)
 
 ## Overview
 
