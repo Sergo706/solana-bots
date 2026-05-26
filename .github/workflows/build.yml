@@ -87,7 +87,6 @@ jobs:
 
       - name: Build CLI
         run: |
-          npx tsdown
           npx drizzle-kit generate
           cp -r src/db/migrations dist/migrations
           npm run compile:windows
