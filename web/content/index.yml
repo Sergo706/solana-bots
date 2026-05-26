@@ -5,7 +5,7 @@ seo:
   description: A powerful desktop application and CLI for managing multiple wallets, executing mass token swaps, and running volume bots.
 navigation: false
 hero:
-  badge: v1.0.0 - Self-custodial trading suite
+  badge: v1.0.6 - Self-custodial trading suite
   image:
     src: /home.png
     alt: Solana Bots desktop application showing wallet management dashboard
