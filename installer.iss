@@ -1,6 +1,6 @@
 [Setup]
 AppName=Solana Bots
-AppVersion=1.0
+AppVersion=1.0.6
 AppPublisher=Sergey Riavzon
 AppPublisherURL=https://riavzon.com
 AppCopyright=Copyright (C) 2026 Sergey Riavzon.
