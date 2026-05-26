@@ -17,9 +17,9 @@ const groups = [{
     label: 'Explore',
     slot: 'links' as const,
     items: [
-        { label: 'Getting Started', icon: 'i-lucide-rocket', to: '/docs/getting-started' },
+        { label: 'Getting Started', icon: 'i-lucide-rocket', to: '/docs/installation' },
         { label: 'CLI Guide', icon: 'i-lucide-terminal', to: '/docs/cli' },
-        { label: 'Desktop App', icon: 'i-lucide-monitor', to: '/docs/desktop' },
+        { label: 'Desktop App', icon: 'i-lucide-monitor', to: '/docs/app' },
         { label: 'Blog', icon: 'i-lucide-newspaper', to: '/blog' },
         { label: 'Download', icon: 'i-lucide-download', to: '/download' },
         { label: 'Security', icon: 'i-lucide-shield-check', to: '/legal/security' },
