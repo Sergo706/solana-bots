@@ -1,7 +1,7 @@
 {
   "name": "solana-bots",
   "productName": "Solana Bots",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "description": "Solana Trading Terminal and Bot Manager",
   "main": ".vite/build/main.js",
   "type": "module",
