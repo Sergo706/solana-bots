@@ -1,6 +1,6 @@
 ---
 pageHeader:
-  version: "v1.0.7"
+  version: "v1.0.8"
   title: "Download Solana Bots"
   description: "Get the latest version of the CLI and Desktop app for your platform."
 downloads:
