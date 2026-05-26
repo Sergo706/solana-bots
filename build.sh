@@ -3,7 +3,11 @@ set -e
 
 CURRENT_VERSION="0.0.0"
 
-if [ -d "build" ]; then
+
+LATEST_TAG=$(git tag -l "v*" --sort=-v:refname 2>/dev/null | head -n 1)
+if [ -n "$LATEST_TAG" ]; then
+    CURRENT_VERSION="${LATEST_TAG#v}"
+elif [ -d "build" ]; then
     RAW_VERSION=$(find build -type f 2>/dev/null | grep -oE 'V[0-9]+\.[0-9]+\.[0-9]+' | sed 's/V//' | sort -V | tail -n 1)
     if [ -n "$RAW_VERSION" ]; then
         CURRENT_VERSION="$RAW_VERSION"
