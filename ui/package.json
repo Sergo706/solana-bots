@@ -38,7 +38,7 @@
     "vite": "5.4.21"
   },
   "dependencies": {
-    "@nuxt/ui": "4.7.1",
+    "@nuxt/ui": "4.8.1",
     "@riavzon/utils": "1.1.6",
     "@solana/web3.js": "1.98.4",
     "animate.css": "4.1.1",
